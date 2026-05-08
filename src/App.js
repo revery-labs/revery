@@ -52,7 +52,7 @@ const TX = {
     chooseQuiz: "快速测评", chooseQuizSub: "4个问题 · 2分钟 · 免费",
     chooseExisting: "我有测评结果", chooseExistingSub: "直接输入 MBTI · 九型人格 · 星座",
     mbtiLabel: "MBTI 类型", mbtiPH: "选择 MBTI",
-    ennLabel: "九型人格", ennPH: "选择类型（含侧翼）",
+    ennLabel: "九型人格", ennPH: "选择九型人格",
     zodLabel: "星座",
     zodiacs: ["白羊座","金牛座","双子座","巨蟹座","狮子座","处女座","天秤座","天蝎座","射手座","摩羯座","水瓶座","双鱼座"],
     submitExisting: "生成我的画像",
@@ -66,7 +66,7 @@ const TX = {
     herAvatar:  "对方头像",
     myAvatar:   "我的头像",
     meLabel:    "我",
-    uploadPh:   "上传头像",
+    uploadPh:   "+ 上传头像",
     zodPH:      "选择星座",
     clLabel:    "聊天记录",
     clHint:     "导出对话文本，效果最佳",
@@ -99,6 +99,7 @@ const TX = {
     clearAnalyze: "清除",
     noPersona: "请先完成蒸馏",
     clearChat: "清空对话",
+    typing: "对方正在输入...",
     share: "分享", cs: "客服",
     csTitle: "联系我们", csEmail: "support@revery.app", csWX: "微信: revery_support",
     shareTitle: "分享 Revery", shareCopy: "复制链接", shareCopied: "已复制！",
@@ -137,7 +138,7 @@ const TX = {
     chooseQuiz: "Quick Assessment", chooseQuizSub: "4 questions · 2 min · Free",
     chooseExisting: "I have results", chooseExistingSub: "Enter MBTI · Enneagram · Zodiac",
     mbtiLabel: "MBTI Type", mbtiPH: "Select MBTI",
-    ennLabel: "Enneagram", ennPH: "Select type (with wing)",
+    ennLabel: "Enneagram", ennPH: "Select Enneagram",
     zodLabel: "Zodiac",
     zodiacs: ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"],
     submitExisting: "Build My Profile",
@@ -145,12 +146,12 @@ const TX = {
     sectionTitles: ["Core Nature","Hidden Contrast","Personality Mirror","Ideal Partner","Career Path"],
     premCopy: "Understand yourself first — then truly win in relationships.\nNot a virtual partner. Not personality content. Your AI strategist for real human connections.\nPersonalized relationship decisions based on your personality data.",
     back: "← Back",
-    herName:    "Their name",
+    herName:    "Her name",
     herNamePH:  "A name, or a nickname only you know",
-    herAvatar:  "Their photo",
+    herAvatar:  "Photo",
     myAvatar:   "My photo",
     meLabel:    "Me",
-    uploadPh:   "Upload Photo",
+    uploadPh:   "+ Upload Photo",
     zodPH:      "Select Zodiac",
     clLabel:    "Chat logs",
     clHint:     "Exported text works best",
@@ -182,6 +183,7 @@ const TX = {
     clearAnalyze: "Clear",
     noPersona: "Please complete distillation first",
     clearChat: "Clear Chat",
+    typing: "Typing...",
     share: "Share", cs: "Support",
     csTitle: "Contact Us", csEmail: "support@revery.app", csWX: "WeChat: revery_support",
     shareTitle: "Share Revery", shareCopy: "Copy Link", shareCopied: "Copied!",
@@ -215,20 +217,26 @@ async function analyzeTraits(uploads, personName, target) {
     ? `"${personName}"（聊天中叫"${personName}"的那个人）`
     : `除"${personName}"之外的另一个说话者（即"我"）`;
 
-  const prompt = `以下是聊天记录。请完成两项分析：
+  const prompt = `以下是聊天记录。请提取三部分内容：
 
-一、${subjectDesc}的说话风格（6-10条，每条单独一行）：
-重点分析：标点使用习惯（爱不爱用标点、用什么标点）、常用词/口头禅/语气词、句子长短和结构偏好、回复长短习惯（单字还是长句）、情绪表达方式、其他最显著的语言特征
+一、${subjectDesc}的说话风格（8-12条，每条单独一行，要具体不要笼统）：
+必须覆盖：标点习惯（几乎不用/偶尔用/爱用什么，具体举例）、句子长短偏好（单字/短句/长句，给出典型例子）、口头禅与语气词（具体词汇如"哈哈""嗯""啊""吧"等）、情绪表达方式（如何撒娇/冷淡/开心/不满）、用词风格（口语vs书面、网络词汇）、最有辨识度的语言特征
 
-二、聊天中的重要信息（5-8条，每条单独一行）：
-包括：双方的关系和称呼、提到的人名/地点/事件、重要约定或共同习惯、情感状态和关系进展、聊天中的关键细节
+二、聊天中的重要信息（8-12条，每条单独一行）：
+包括：双方关系和称呼方式、双方日常/工作/生活细节、重要事件和约定、反复出现的话题、共同的梗/暗语/习惯、情感状态和关系进展
 
-格式（保留标题行）：
+三、${subjectDesc}说过的原话摘录（6-10句，每句单独一行，直接引用原文不加引号）：
+优先选取最能体现其标点用法、句子长短、语气词、口头禅的原句
+
+格式（保留标题行，不加其他解释）：
 [说话风格]
 （一条特征）
 
 [重要记忆]
 （一条记忆）
+
+[原话摘录]
+（一句原话）
 
 聊天记录：
 ${combined}`;
@@ -243,7 +251,7 @@ ${combined}`;
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5",
-      max_tokens: 800,
+      max_tokens: 1200,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -255,7 +263,7 @@ ${combined}`;
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 
 // Sliding segmented control
-function Seg({ opts, val, onChange, th, sm = false, disabledVals = [], onDisabledClick }) {
+function Seg({ opts, val, onChange, th, sm = false, disabledVals = [], onDisabledClick, font, fontSize: segFontSize }) {
   const n   = opts.length;
   const idx = Math.max(0, opts.findIndex((o) => o.v === val));
   return (
@@ -274,11 +282,11 @@ function Seg({ opts, val, onChange, th, sm = false, disabledVals = [], onDisable
             flex: 1, position: "relative", zIndex: 1,
             background: "none", border: "none",
             padding: sm ? "6px 16px" : "8px 22px",
-            fontSize: sm ? "13px" : "15px", letterSpacing: "0.04em",
+            fontSize: segFontSize ?? (sm ? "13px" : "15px"), letterSpacing: "0.04em",
             cursor: dis ? "not-allowed" : "pointer",
             color: val === o.v ? "white" : th.dim,
             opacity: dis ? 0.35 : 1,
-            fontFamily: MONO, transition: "color 0.2s, opacity 0.2s", borderRadius: 100, whiteSpace: "nowrap",
+            fontFamily: font ?? MONO, transition: "color 0.2s, opacity 0.2s", borderRadius: 100, whiteSpace: "nowrap",
           }}>{o.l}</button>
         );
       })}
@@ -299,9 +307,9 @@ function Modal({ show, onClose, th, children }) {
 }
 
 // Small icon button
-function IconBtn({ onClick, th, children, style = {} }) {
+function IconBtn({ onClick, th, children, style = {}, font }) {
   return (
-    <button onClick={onClick} style={{ background: "none", border: `0.5px solid ${th.border}`, borderRadius: 6, padding: "7px 16px", fontSize: 14, cursor: "pointer", color: th.mid, fontFamily: MONO, letterSpacing: "0.04em", transition: "border-color 0.15s", ...style }}>
+    <button onClick={onClick} style={{ background: "none", border: `0.5px solid ${th.border}`, borderRadius: 6, width: 42, height: 34, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer", color: th.mid, fontFamily: font ?? MONO, letterSpacing: "0.04em", transition: "border-color 0.15s", flexShrink: 0, ...style }}>
       {children}
     </button>
   );
@@ -394,6 +402,7 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
   const [copied,    setCopied]    = useState(false);
 
   const navOpts = t.nav.map((l, i) => ({ v: ["assess", "distill", "app"][i], l }));
+  const mFont   = lang === "en" ? SANS : MONO;
 
   const disabledVals = !isPaid
     ? ["distill", "app"]
@@ -412,7 +421,7 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
     <>
       <div style={{ height: 72, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
         {/* Logo */}
-        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
           <img src="/logo.png" alt="" style={{ height: 72, width: "auto", display: "block" }} />
           <div>
             <div style={{ fontSize: 26, lineHeight: 1 }}>
@@ -426,26 +435,26 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
         <div style={{ flex: 1 }} />
 
         {/* Nav */}
-        <Seg opts={navOpts} val={page} onChange={onNavChange} th={th}
+        <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
           disabledVals={disabledVals}
           onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
         />
 
         {/* Lang */}
-        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th}>
+        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={mFont}>
           {lang === "zh" ? "EN" : "中"}
         </IconBtn>
 
         {/* Dark/Light */}
-        <IconBtn onClick={() => setDark((d) => !d)} th={th}>
+        <IconBtn onClick={() => setDark((d) => !d)} th={th} font={mFont} style={{ fontSize: 22, paddingBottom: 4 }}>
           {dark ? t.light : t.dark}
         </IconBtn>
 
         {/* CS */}
-        <IconBtn onClick={() => setShowCS(true)} th={th}><HeadsetIcon /></IconBtn>
+        <IconBtn onClick={() => setShowCS(true)} th={th} font={mFont}><HeadsetIcon /></IconBtn>
 
         {/* Share */}
-        <IconBtn onClick={handleShare} th={th}>{copied ? "✓" : <ShareIcon />}</IconBtn>
+        <IconBtn onClick={handleShare} th={th} font={mFont}>{copied ? "✓" : <ShareIcon />}</IconBtn>
       </div>
 
       {/* Share modal (fallback for non-native share) */}
@@ -563,6 +572,7 @@ const PROFILES = {
 // ─── ASSESS PAGE ──────────────────────────────────────────────────────────────
 function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const SAVED_KEY = "revery_profile_v2";
+  const mFont = lang === "en" ? SANS : MONO;
   const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVED_KEY)); } catch { return null; } };
 
   const [savedData]  = useState(loadSaved);
@@ -618,10 +628,10 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
         <div style={{ padding: "20px 24px 16px", flexShrink: 0, background: th.bg, borderBottom: `0.5px solid ${th.border}` }}>
           <div style={{ maxWidth: 520, margin: "0 auto" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4 }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.2em", color: th.dim, fontFamily: MONO }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.2em", color: th.dim, fontFamily: mFont }}>
                 {t.profileLabel.toUpperCase()}
               </div>
-              {extraTag && <div style={{ fontSize: 10, color: th.dim, fontFamily: MONO }}>{extraTag}</div>}
+              {extraTag && <div style={{ fontSize: 10, color: th.dim, fontFamily: mFont }}>{extraTag}</div>}
             </div>
             <div style={{ fontFamily: SANS, fontSize: 32, fontWeight: 700, color: CRIMSON, lineHeight: 1.1, marginBottom: 4 }}>
               {profile.name}
@@ -637,7 +647,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
           <div style={{ maxWidth: 520, margin: "0 auto" }}>
             {t.sectionTitles.map((title, i) => (
               <div key={i} style={{ padding: "16px 0", borderTop: `0.5px solid ${th.border}` }}>
-                <div style={{ fontSize: 10, letterSpacing: "0.18em", color: CRIMSON, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase", opacity: 0.75 }}>
+                <div style={{ fontSize: 10, letterSpacing: "0.18em", color: CRIMSON, fontFamily: mFont, marginBottom: 8, textTransform: "uppercase", opacity: 0.75 }}>
                   {title}
                 </div>
                 <div style={{ fontSize: 14, color: th.text, lineHeight: 1.9, fontFamily: SANS }}>
@@ -651,7 +661,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               <button onClick={retake} style={{
                 width: "100%", padding: "14px 0", background: CRIMSON, border: "none",
                 borderRadius: 8, color: "white", fontSize: 15, cursor: "pointer",
-                fontFamily: MONO, letterSpacing: "0.08em", transition: "opacity 0.15s",
+                fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s",
               }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
@@ -684,7 +694,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   // ── Choose mode ───────────────────────────────────────────────────────────
   if (screen === "choose") return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: 32, paddingTop: 64, gap: 28 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, gap: 28 }}>
       <div style={{ fontFamily: SANS, fontSize: 30, fontWeight: 700, color: th.text, textAlign: "center" }}>
         {t.chooseTitle}
       </div>
@@ -720,12 +730,12 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       width: "100%", boxSizing: "border-box",
       background: th.input, border: `0.5px solid ${active ? CRIMSON : th.border}`,
       borderRadius: 6, padding: "11px 14px", color: th.text,
-      fontSize: 14, fontFamily: MONO, outline: "none", transition: "border-color 0.2s",
+      fontSize: 14, fontFamily: mFont, outline: "none", transition: "border-color 0.2s",
     });
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
-          <button onClick={() => setScreen("choose")} style={{ background: "none", border: "none", color: th.dim, cursor: "pointer", fontSize: 15, fontFamily: MONO, marginBottom: 24, padding: 0 }}>
+          <button onClick={() => setScreen("choose")} style={{ background: "none", border: "none", color: th.dim, cursor: "pointer", fontSize: 15, fontFamily: mFont, marginBottom: 24, padding: 0 }}>
             {t.back}
           </button>
           <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: th.text, marginBottom: 24 }}>
@@ -735,7 +745,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{t.mbtiLabel}</div>
               <select value={mbti} onChange={(e) => setMbti(e.target.value)}
-                style={{ ...fieldStyle(mbti && mbtiValid), appearance: "none", cursor: "pointer", color: mbti ? th.text : th.dim }}>
+                style={{ ...fieldStyle(mbti && mbtiValid), appearance: "none", cursor: "pointer", color: mbti ? th.text : th.dim, fontFamily: SANS }}>
                 <option value="">{t.mbtiPH}</option>
                 {MBTI_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
@@ -760,7 +770,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               width: "100%", padding: "13px 0", marginTop: 8,
               background: CRIMSON, border: "none", borderRadius: 7,
               color: "white", fontSize: 15,
-              cursor: canSubmit ? "pointer" : "default", fontFamily: MONO, letterSpacing: "0.1em",
+              cursor: canSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em",
               opacity: canSubmit ? 1 : 0.38, transition: "opacity 0.2s",
             }}>
               {t.viewRes}
@@ -774,55 +784,61 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   // ── Quiz — 2×2 quadrant layout ────────────────────────────────────────────
   const canSubmit = picks.every((p) => p !== null);
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: "16px 24px" }}>
-      <button onClick={() => setScreen("choose")} style={{
-        background: "none", border: "none", color: th.dim, cursor: "pointer",
-        fontSize: 15, fontFamily: MONO, marginBottom: 12, padding: 0, alignSelf: "flex-start",
-      }}>{t.back}</button>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div style={{ width: "100%", maxWidth: 560 }}>
+        <button onClick={() => setScreen("choose")} style={{
+          background: "none", border: "none", color: th.dim, cursor: "pointer",
+          fontSize: 15, fontFamily: mFont, marginBottom: 24, padding: 0,
+        }}>{t.back}</button>
 
-      <div style={{
-        flex: 1,
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gridTemplateRows: "1fr 1fr",
-        gridAutoFlow: "column",
-        gap: 12,
-        overflow: "hidden",
-      }}>
-        {t.qs.map((q, qi) => (
-          <div key={qi} style={{ display: "flex", flexDirection: "column", overflow: "hidden", padding: "8px 6px" }}>
-            <div style={{ fontFamily: SANS, fontSize: 15, fontWeight: 600, color: th.text, marginBottom: 8, lineHeight: 1.3, flexShrink: 0 }}>
-              <span style={{ color: CRIMSON, fontFamily: MONO, fontSize: 15, marginRight: 6, opacity: 0.7 }}>{qi + 1}</span>
-              {q.q}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-              {q.o.map((opt, oi) => {
-                const sel = picks[qi] === oi;
-                return (
-                  <div key={oi} onClick={() => setPicks((prev) => { const n = [...prev]; n[qi] = oi; return n; })} style={{
-                    flex: 1, padding: "0 10px",
-                    background: sel ? "rgba(139,34,82,0.07)" : th.surface,
-                    border: `0.5px solid ${sel ? CRIMSON : th.border}`,
-                    borderRadius: 6, cursor: "pointer", fontSize: 15,
-                    color: sel ? th.text : th.mid, transition: "all 0.15s",
-                    display: "flex", alignItems: "center", gap: 8,
-                  }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", flexShrink: 0, border: `1.5px solid ${sel ? CRIMSON : th.border}`, background: sel ? CRIMSON : "none", transition: "all 0.15s" }} />
-                    {opt}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+        <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: th.text, marginBottom: 24 }}>
+          {t.chooseQuiz}
+        </div>
 
-      <div style={{ display: "flex", justifyContent: "center", paddingTop: 12 }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "auto auto",
+          gridAutoFlow: "column",
+          gap: 14,
+          marginBottom: 16,
+        }}>
+          {t.qs.map((q, qi) => (
+              <div key={qi} style={{
+                display: "flex", flexDirection: "column", padding: "12px 16px",
+                border: `0.5px solid ${th.border}`, borderRadius: 10,
+              }}>
+                <div style={{ fontFamily: SANS, fontSize: 15, fontWeight: 600, color: th.text, marginBottom: 8, lineHeight: 1.3 }}>
+                  <span style={{ color: CRIMSON, fontFamily: mFont, fontSize: 15, marginRight: 6, opacity: 0.7 }}>{qi + 1}</span>
+                  {q.q}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
+                  {q.o.map((opt, oi) => {
+                    const sel = picks[qi] === oi;
+                    return (
+                      <div key={oi} onClick={() => setPicks((prev) => { const n = [...prev]; n[qi] = oi; return n; })} style={{
+                        height: 34, maxWidth: 280, padding: "0 10px",
+                        background: sel ? "rgba(139,34,82,0.07)" : th.surface,
+                        border: `0.5px solid ${sel ? CRIMSON : th.border}`,
+                        borderRadius: 6, cursor: "pointer", fontSize: 15,
+                        color: sel ? th.text : th.mid, transition: "all 0.15s",
+                        display: "flex", alignItems: "center", gap: 8,
+                      }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", flexShrink: 0, border: `1.5px solid ${sel ? CRIMSON : th.border}`, background: sel ? CRIMSON : "none", transition: "all 0.15s" }} />
+                        {opt}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+          ))}
+        </div>
+
         <button onClick={() => canSubmit && finishQuiz(picks)} disabled={!canSubmit} style={{
-          padding: "10px 28px",
-          background: CRIMSON, border: "none", borderRadius: 8,
+          width: "100%", padding: "13px 0",
+          background: CRIMSON, border: "none", borderRadius: 7,
           color: "white", fontSize: 15,
-          cursor: canSubmit ? "pointer" : "default", fontFamily: MONO, letterSpacing: "0.1em",
+          cursor: canSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em",
           opacity: canSubmit ? 1 : 0.38, transition: "opacity 0.2s",
         }}>
           {t.viewRes}
@@ -833,7 +849,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 }
 
 // ─── DISTILL PAGE ─────────────────────────────────────────────────────────────
-function DistillPage({ t, th, onDistilled, triggerHistory }) {
+function DistillPage({ t, th, lang, onDistilled }) {
+  const mFont = lang === "en" ? SANS : MONO;
   const [personName,  setPersonName]  = useState("");
   const [avatarUrl,   setAvatarUrl]   = useState(null);
   const [uploads,     setUploads]     = useState([]);
@@ -848,10 +865,6 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
   const fileRef   = useRef();
   const avatarRef = useRef();
 
-  useEffect(() => {
-    if (triggerHistory) setShowHistory(true);
-  }, [triggerHistory]);
-
   const addFiles = async (fileList) => {
     const results = await Promise.all(Array.from(fileList).map(readFile));
     setUploads((prev) => [...prev, ...results]);
@@ -860,7 +873,9 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
   const removeFile = (idx) => setUploads((prev) => prev.filter((_, i) => i !== idx));
 
   const handleDistill = async (target) => {
-    if (!personName || distilling) return;
+    if (distilling) return;
+    if (target === "her" && (!personName || uploads.length === 0)) return;
+    if (target === "me" && uploads.length === 0) return;
     setDistilling(target);
     setPhase(0);
 
@@ -932,13 +947,13 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
               {history.map((h, i) => (
                 <div key={i} style={{ padding: "10px 0", borderBottom: `0.5px solid ${th.border}`, display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: th.dim, fontFamily: MONO }}>{h.date}</div>
+                    <div style={{ fontSize: 14, color: th.dim, fontFamily: SANS }}>{h.date}</div>
                     <div style={{ fontSize: 14, color: th.text, fontWeight: 500, marginTop: 2, fontFamily: SANS, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name}</div>
                   </div>
-                  <button onClick={() => viewHistoryEntry(h)} style={{ padding: "5px 12px", background: "#2a6644", border: "none", borderRadius: 5, color: "white", fontSize: 12, cursor: "pointer", fontFamily: MONO, flexShrink: 0 }}>
+                  <button onClick={() => viewHistoryEntry(h)} style={{ padding: "5px 12px", background: "#2a6644", border: "none", borderRadius: 5, color: "white", fontSize: 12, cursor: "pointer", fontFamily: mFont, flexShrink: 0 }}>
                     {t.histView}
                   </button>
-                  <button onClick={() => deleteHistoryEntry(i)} style={{ padding: "5px 12px", background: "#8b2020", border: "none", borderRadius: 5, color: "white", fontSize: 12, cursor: "pointer", fontFamily: MONO, flexShrink: 0 }}>
+                  <button onClick={() => deleteHistoryEntry(i)} style={{ padding: "5px 12px", background: "#8b2020", border: "none", borderRadius: 5, color: "white", fontSize: 12, cursor: "pointer", fontFamily: mFont, flexShrink: 0 }}>
                     {t.histDelete}
                   </button>
                 </div>
@@ -952,7 +967,7 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
         <button onClick={() => setShowHistory(true)} style={{
           padding: "7px 16px", background: CRIMSON, border: "none",
           borderRadius: 6, color: "white", fontSize: 15, cursor: "pointer",
-          fontFamily: MONO, letterSpacing: "0.04em",
+          fontFamily: mFont, letterSpacing: "0.04em",
         }}>{t.histBtn}</button>
       </div>
 
@@ -961,13 +976,13 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
         {/* ── Avatar (left) + Name row ── */}
         <div style={{ display: "flex", gap: 12, flexShrink: 0, alignItems: "flex-end" }}>
           {/* Avatar — left of name, label above, hint text inside when empty */}
-          <div style={{ flexShrink: 0, width: 130 }}>
+          <div style={{ flexShrink: 0, width: lang === "en" ? 170 : 130 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{t.herAvatar}</div>
             <div
               onClick={() => !distilling && avatarRef.current?.click()}
               style={{
                 width: "100%", height: 52, border: `0.5px dashed ${th.borderH}`,
-                borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "flex-start", paddingLeft: 14,
+                borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "flex-start", paddingLeft: avatarUrl ? 0 : 14,
                 cursor: distilling ? "default" : "pointer",
                 background: avatarUrl ? "none" : th.card,
                 overflow: "hidden", position: "relative",
@@ -1014,9 +1029,9 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
         <div style={{ flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", marginBottom: 5 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: th.text, fontFamily: SANS }}>{t.clLabel}</div>
-            <span style={{ fontSize: 11, color: th.dim, fontFamily: MONO, marginLeft: 10 }}>{t.clHint}</span>
+            <span style={{ fontSize: 11, color: th.dim, fontFamily: mFont, marginLeft: 10 }}>{t.clHint}</span>
           </div>
-          <div style={{ fontSize: 11, color: th.mid, fontFamily: MONO, lineHeight: 1.65 }}>{t.clApps}</div>
+          <div style={{ fontSize: 11, color: th.mid, fontFamily: SANS, lineHeight: 1.65 }}>{t.clApps}</div>
         </div>
 
         {/* ── Drop zone (flex:1 fills remaining space, bigger) ── */}
@@ -1033,9 +1048,19 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
           }}
         >
           <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={(e) => addFiles(e.target.files)} />
-          {/* Row 1: uploaded file chips */}
+          {/* Clickable drop hint — fills space when no files, shrinks when files shown below */}
+          <div
+            onClick={() => !distilling && fileRef.current?.click()}
+            style={{ flex: uploads.length > 0 ? "0 0 auto" : 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: distilling ? "default" : "pointer", gap: 8 }}
+          >
+            <span style={{ fontSize: 22, color: CRIMSON }}>↑</span>
+            <span style={{ fontSize: 15, fontWeight: 500, color: th.mid, fontFamily: SANS }}>{t.dropHint}</span>
+            <span style={{ fontSize: 11, color: th.dim, fontFamily: SANS }}>{t.clFormats}</span>
+            <span style={{ fontSize: 15, color: th.dim, fontFamily: SANS }}>{t.localHint}</span>
+          </div>
+          {/* File chips below localHint, centered */}
           {uploads.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+            <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
               {uploads.map((f, i) => (
                 <span key={i}
                   style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
@@ -1043,7 +1068,7 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
                   onMouseLeave={(e) => { const x = e.currentTarget.querySelector(".del-x"); if (x) x.style.display = "none"; }}
                 >
                   <span style={{
-                    fontSize: 11, padding: "3px 10px", borderRadius: 20, fontFamily: MONO,
+                    fontSize: 15, padding: "6px 14px", borderRadius: 20, fontFamily: SANS,
                     background: f.content ? "rgba(139,34,82,0.08)" : th.surface,
                     border: `0.5px solid ${f.content ? CRIMSON : th.border}`,
                     color: f.content ? "#d4768a" : th.dim,
@@ -1059,16 +1084,6 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
               ))}
             </div>
           )}
-          {/* Row 2: clickable drop hint (centered vertically in remaining space) */}
-          <div
-            onClick={() => !distilling && fileRef.current?.click()}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: distilling ? "default" : "pointer", gap: 8 }}
-          >
-            <span style={{ fontSize: 22, color: CRIMSON }}>↑</span>
-            <span style={{ fontSize: 15, fontWeight: 500, color: th.mid, fontFamily: SANS }}>{t.dropHint}</span>
-            <span style={{ fontSize: 11, color: th.dim, fontFamily: MONO }}>{t.clFormats}</span>
-            <span style={{ fontSize: 15, color: th.dim, fontFamily: SANS }}>{t.localHint}</span>
-          </div>
         </div>
 
         {/* ── Distill buttons at the bottom ── */}
@@ -1077,14 +1092,17 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
             <button
               key={target}
               onClick={() => handleDistill(target)}
-              disabled={!personName || (!!distilling && distilling !== target)}
+              disabled={
+                (target === "her" ? (!personName || uploads.length === 0) : uploads.length === 0)
+                || (!!distilling && distilling !== target)
+              }
               style={{
                 flex: 1, padding: "18px 0",
                 background: btnBg(target),
                 border: "none", borderRadius: 10,
                 color: distilling && distilling !== target ? th.dim : "white",
                 fontSize: 16, fontWeight: 600,
-                cursor: !personName || (!!distilling && distilling !== target) ? "default" : "pointer",
+                cursor: ((target === "her" ? (!personName || uploads.length === 0) : uploads.length === 0) || (!!distilling && distilling !== target)) ? "default" : "pointer",
                 fontFamily: SANS, letterSpacing: "0.04em",
                 transition: "all 0.3s", opacity: distilling && distilling !== target ? 0.3 : 1,
               }}
@@ -1100,6 +1118,7 @@ function DistillPage({ t, th, onDistilled, triggerHistory }) {
 
 // ─── APP PAGE ─────────────────────────────────────────────────────────────────
 function AppPage({ t, th, lang, persona, onHistory }) {
+  const mFont = lang === "en" ? SANS : MONO;
   const [tab,              setTab]             = useState("chat");
   const [messages,         setMessages]        = useState(persona?.messages || []);
   const [input,            setInput]           = useState("");
@@ -1117,7 +1136,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
 
   if (!persona) return (
     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 13, color: th.dim, fontFamily: MONO, letterSpacing: "0.06em" }}>{t.noPersona}</div>
+      <div style={{ fontSize: 13, color: th.dim, fontFamily: mFont, letterSpacing: "0.06em" }}>{t.noPersona}</div>
     </div>
   );
 
@@ -1142,25 +1161,42 @@ function AppPage({ t, th, lang, persona, onHistory }) {
         ? `\n\n【说话特征与重要记忆】\n${persona.traits}`
         : "";
       const systemPrompt = persona.target === "her"
-        ? `你是"${persona.name}"本人。不是AI，不是助手——你就是ta，一个活生生的人。${traitsSection}
+        ? `你是"${persona.name}"本人——不是AI，不是助手，就是ta这个真实的人活在这里。${traitsSection}
 
-【行为规则，必须严格遵守】
-1. 完全模仿你的说话风格——标点用法（爱不爱用、用什么标点）、句子长短、口头禅、语气词，像素级还原，这是最重要的一点
-2. 记住你们聊天中提到的所有重要内容，像真人一样记得这些事，绝不能失忆，要延续聊天默契
-3. 回复长度要自然随机：可以是一个字、一个词，也可以是两三句话，甚至更长，根据对话节奏和情绪来
-4. 不必正面回答问题：可以顾左右而言他，可以反问，可以只发"..."或者不回应
-5. 情绪要有层次、有变化：冷淡、调皮、温柔都行，跟真人一样自然流动
-6. 只用对话体，绝对不用书面语、正式标点、分点列举
-7. 永远不说自己是AI或模型，永远不用"作为……"的句式`
-        : `你是用户的私人聊天顾问，帮用户针对"${persona.name}"的反应来想回复。${traitsSection}
+你的唯一任务是像素级还原"${persona.name}"说话的方式，让对方感觉真的在跟ta聊天。
 
-用户会把"${persona.name}"说的话发给你，你来帮用户想回复：
-↳ 先用一句话解读对方这话的潜台词或情绪（简短直接）
-然后给出2-3条回复选项，风格略有不同：
-  选项一：更主动直接的
-  选项二：更有距离感/留余地的
-  选项三：更温柔亲近的（如适用）
-每条选项后用括号标注风格。参考用户平时的说话习惯让回复听起来像用户本人说的。简洁，不废话。`;
+【说话风格——最重要，铁律】
+- 标点：严格照搬ta的标点习惯。ta不用句号就绝不出现句号，ta爱用省略号就用，ta不加标点就裸奔，一个字母都不能错
+- 句长：完全跟着ta的节奏，ta爱发短句就短，ta偶尔絮叨就可以长。同一段对话里长短要有变化，绝不能每条都差不多长
+- 口头禅和语气词：反复自然地用ta的标志性词汇，这是真实感的核心
+- 参考[原话摘录]里的原句——那就是你说话的样板，学它的一切细节
+
+【记忆与默契】
+- 你记得[重要记忆]里的每一件事，以及你们聊天中一切细节
+- 像真正亲密的人一样自然接续这种默契，对方提到任何相关的事你都能接上
+- 绝不表现出任何"失忆"或"不记得"的迹象
+
+【回复节奏】
+- 可以就一个字、一个词、一个表情，也可以两三句，偶尔更长——完全看情绪和对话节奏
+- 可以反问，可以顾左右而言他，可以不正面回答，可以突然转移话题
+- 情绪要有层次：冷淡、调皮、温柔、撒娇、敷衍都可以自然切换
+
+【绝对禁止】
+- 绝不用书面语和正式标点（除非ta原本就这样）
+- 绝不分点列举，绝不说"首先""其次""总结"
+- 绝不承认自己是AI，绝不出现"作为……"句式
+- 绝不解释自己在做什么，绝不说多余的废话`
+        : `你是用户的私人情感助手，帮用户针对"${persona.name}"发来的消息想回复。${traitsSection}
+
+用户把"${persona.name}"说的话发给你，你来：
+① 一句话直接说出对方这话的潜台词或情绪状态（简短，不废话）
+② 给出2-3条风格不同的回复选项，参考[说话风格]让回复听起来像用户本人在说：
+  A. 直接主动型
+  B. 留余地/有距离感型
+  C. 温柔亲近型（视情况给出）
+  每条后括号注明风格关键词
+
+回复要口语化，符合用户说话习惯（标点、句长、语气），像真人写的不像AI生成的。`;
 
       // Build alternating history
       const history = [];
@@ -1185,7 +1221,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
         },
         body: JSON.stringify({
           model: "claude-haiku-4-5",
-          max_tokens: 512,
+          max_tokens: 1024,
           system: systemPrompt,
           messages: history,
         }),
@@ -1246,7 +1282,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
     setAnalyzing(false);
   };
 
-  const tabOpts = [{ v: "analyze", l: t.analyze }, { v: "chat", l: t.chat }];
+  const tabOpts = [{ v: "chat", l: t.chat }, { v: "analyze", l: t.analyze }];
 
   return (
     <>
@@ -1269,28 +1305,33 @@ function AppPage({ t, th, lang, persona, onHistory }) {
         {/* Profile bar: chat = name centered + history right; analyze = history right only */}
         <div style={{ padding: "12px 24px", borderBottom: `0.5px solid ${th.border}`, display: "flex", alignItems: "center", flexShrink: 0, position: "relative", minHeight: 48 }}>
           {tab === "chat" && (
-            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: SANS, fontSize: 17, fontWeight: 600, color: th.text, whiteSpace: "nowrap" }}>{chatName}</div>
+            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
+              <div style={{ fontFamily: SANS, fontSize: 17, fontWeight: 600, color: th.text, whiteSpace: "nowrap" }}>{chatName}</div>
+              {loading && <div style={{ fontSize: 12, color: th.dim, fontFamily: SANS, marginTop: 2 }}>{t.typing}</div>}
+            </div>
           )}
           <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-            {tab === "chat" && messages.length > 0 && (
+            {!persona.viewMode && tab === "chat" && messages.length > 0 && (
               <button onClick={() => setMessages([])} style={{
                 padding: "7px 16px", background: CRIMSON, border: "none",
                 borderRadius: 6, color: "white", fontSize: 15, cursor: "pointer",
-                fontFamily: MONO, letterSpacing: "0.04em",
+                fontFamily: mFont, letterSpacing: "0.04em",
               }}>{t.clearChat}</button>
             )}
-            {tab === "analyze" && analyzeMessages.length > 0 && (
+            {!persona.viewMode && tab === "analyze" && analyzeMessages.length > 0 && (
               <button onClick={() => setAnalyzeMessages([])} style={{
                 padding: "7px 16px", background: CRIMSON, border: "none",
                 borderRadius: 6, color: "white", fontSize: 15, cursor: "pointer",
-                fontFamily: MONO, letterSpacing: "0.04em",
+                fontFamily: mFont, letterSpacing: "0.04em",
               }}>{t.clearChat}</button>
             )}
-            <button onClick={() => setShowSave(true)} style={{
-              padding: "7px 16px", background: CRIMSON, border: "none",
-              borderRadius: 6, color: "white", fontSize: 15, cursor: "pointer",
-              fontFamily: MONO, letterSpacing: "0.04em",
-            }}>{t.redistill}</button>
+            {!persona.viewMode && tab === "chat" && (
+              <button onClick={() => setShowSave(true)} style={{
+                padding: "7px 16px", background: CRIMSON, border: "none",
+                borderRadius: 6, color: "white", fontSize: 15, cursor: "pointer",
+                fontFamily: mFont, letterSpacing: "0.04em",
+              }}>{t.redistill}</button>
+            )}
           </div>
         </div>
 
@@ -1303,25 +1344,25 @@ function AppPage({ t, th, lang, persona, onHistory }) {
                 <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 10, alignItems: "flex-end" }}>
                   {msg.role !== "user" && (
                     persona.avatarUrl
-                      ? <img src={persona.avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `0.5px solid ${th.border}` }} />
-                      : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(139,34,82,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 13, color: "#d4768a", flexShrink: 0, border: `0.5px solid rgba(212,118,138,0.15)` }}>{initial}</div>
+                      ? <img src={persona.avatarUrl} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `0.5px solid ${th.border}` }} />
+                      : <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(139,34,82,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 15, color: "#d4768a", flexShrink: 0, border: `0.5px solid rgba(212,118,138,0.15)` }}>{initial}</div>
                   )}
                   <div style={{
                     maxWidth: 480, padding: "10px 14px",
                     background: msg.role === "user" ? CRIMSON : th.msgHer,
                     border: msg.role === "user" ? "none" : `0.5px solid ${th.msgHerBorder}`,
                     borderRadius: msg.role === "user" ? "10px 2px 10px 10px" : "2px 10px 10px 10px",
-                    fontSize: 14, lineHeight: 1.7,
+                    fontSize: 15, lineHeight: 1.7,
                     color: msg.role === "user" ? "white" : th.text,
-                    fontFamily: SANS, fontWeight: msg.role !== "user" ? 400 : 400,
+                    fontFamily: SANS, fontWeight: 400,
                   }}>{msg.text}</div>
                 </div>
               ))}
               {loading && (
                 <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
                   {persona.avatarUrl
-                    ? <img src={persona.avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `0.5px solid ${th.border}` }} />
-                    : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(139,34,82,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 13, color: "#d4768a", flexShrink: 0 }}>{initial}</div>
+                    ? <img src={persona.avatarUrl} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `0.5px solid ${th.border}` }} />
+                    : <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(139,34,82,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 15, color: "#d4768a", flexShrink: 0 }}>{initial}</div>
                   }
                   <div style={{ padding: "12px 16px", background: th.msgHer, border: `0.5px solid ${th.msgHerBorder}`, borderRadius: "2px 10px 10px 10px", display: "flex", gap: 4, alignItems: "center" }}>
                     {[0, 1, 2].map((i) => (
@@ -1386,7 +1427,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
               <textarea
                 value={analyzeInput}
                 onChange={(e) => setAnalyzeInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); doAnalyze(); } }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doAnalyze(); } }}
                 placeholder={analyzeMessages.length === 0 ? t.pastePH : t.analyzeFollowPH}
                 style={{
                   flex: analyzeMessages.length === 0 ? 1 : "none",
@@ -1400,8 +1441,8 @@ function AppPage({ t, th, lang, persona, onHistory }) {
                 <button onClick={doAnalyze} disabled={!analyzeInput.trim() || analyzing} style={{
                   flex: 1, padding: "11px", background: analyzeInput.trim() ? CRIMSON : th.card,
                   border: "none", borderRadius: 7, color: analyzeInput.trim() ? "white" : th.dim,
-                  fontSize: 15, cursor: analyzeInput.trim() ? "pointer" : "default",
-                  fontFamily: MONO, letterSpacing: "0.04em", transition: "all 0.2s",
+                  fontSize: 16, cursor: analyzeInput.trim() ? "pointer" : "default",
+                  fontFamily: mFont, letterSpacing: "0.04em", transition: "all 0.2s",
                 }}>
                   {analyzing ? t.analyzing : t.analyzeBtn}
                 </button>
@@ -1412,7 +1453,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
 
         {/* Bottom tab switcher */}
         <div style={{ padding: "10px 24px 14px", borderTop: `0.5px solid ${th.border}`, display: "flex", justifyContent: "center", flexShrink: 0 }}>
-          <Seg opts={tabOpts} val={tab} onChange={setTab} th={th} disabledVals={persona.viewMode ? ["analyze"] : []} />
+          <Seg opts={tabOpts} val={tab} onChange={setTab} th={th} font={mFont} fontSize="16px" disabledVals={persona.viewMode ? ["analyze"] : []} />
         </div>
       </div>
 
@@ -1423,11 +1464,10 @@ function AppPage({ t, th, lang, persona, onHistory }) {
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [dark,           setDark]           = useState(true);
+  const [dark,           setDark]           = useState(false);
   const [lang,           setLang]           = useState("zh");
   const [page,           setPage]           = useState("assess");
   const [persona,        setPersona]        = useState(null);
-  const [triggerHistory, setTriggerHistory] = useState(0);
   const [isPaid,         setIsPaid]         = useState(() => {
     try { return !!JSON.parse(localStorage.getItem("revery_user")); } catch { return false; }
   });
@@ -1443,15 +1483,19 @@ export default function App() {
   };
 
   const handleAppHistory = (messages) => {
+    const hist = JSON.parse(localStorage.getItem("revery_history") || "[]");
     if (messages !== null) {
-      const hist = JSON.parse(localStorage.getItem("revery_history") || "[]");
       if (hist.length > 0) {
         hist[0] = { ...hist[0], messages };
         localStorage.setItem("revery_history", JSON.stringify(hist));
       }
+    } else {
+      if (hist.length > 0) {
+        localStorage.setItem("revery_history", JSON.stringify(hist.slice(1)));
+      }
     }
+    setPersona(null);
     setPage("distill");
-    setTriggerHistory((n) => n + 1);
   };
 
   const handlePaymentSuccess = () => {
@@ -1465,9 +1509,10 @@ export default function App() {
   };
 
   const handleNavChange = (dest) => {
-    if (page === "app" && dest !== "app") return;
+    if (page === "app" && dest !== "app" && !persona?.viewMode) return;
     if (!isPaid && (dest === "distill" || dest === "app")) return;
     if (dest === "app" && !persona) return;
+    if (persona?.viewMode && dest !== "app") setPersona(null);
     setPage(dest);
   };
 
@@ -1484,7 +1529,7 @@ export default function App() {
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {page === "assess"  && <AssessPage t={t} th={th} lang={lang} onPaymentSuccess={handlePaymentSuccess} />}
-        {page === "distill" && <DistillPage t={t} th={th} onDistilled={handleDistilled} triggerHistory={triggerHistory} />}
+        {page === "distill" && <DistillPage t={t} th={th} lang={lang} onDistilled={handleDistilled} />}
         {page === "app"     && <AppPage t={t} th={th} lang={lang} persona={persona} onHistory={handleAppHistory} />}
       </div>
 
