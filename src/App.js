@@ -395,11 +395,23 @@ function RegisterModal({ show, onRegister, th, t }) {
   );
 }
 
+// ─── RESPONSIVE ───────────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [w, setW] = useState(window.innerWidth);
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return w < 640;
+}
+
 // ─── HEADER ───────────────────────────────────────────────────────────────────
 function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid, persona, onPaywall }) {
   const [showShare, setShowShare] = useState(false);
   const [showCS,    setShowCS]    = useState(false);
   const [copied,    setCopied]    = useState(false);
+  const isMobile = useIsMobile();
 
   const navOpts = t.nav.map((l, i) => ({ v: ["assess", "distill", "app"][i], l }));
   const mFont   = lang === "en" ? SANS : MONO;
@@ -417,45 +429,67 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
     }
   };
 
-  return (
-    <>
-      <div style={{ height: 72, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
-        {/* Logo */}
-        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-          <img src="/logo.png" alt="" style={{ height: 72, width: "auto", display: "block" }} />
-          <div>
-            <div style={{ fontSize: 26, lineHeight: 1 }}>
-              <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
-              <span style={{ fontFamily: "Arial, 'Helvetica Neue', sans-serif", color: th.mid, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", marginLeft: 8 }}>LABS</span>
-            </div>
-            <div style={{ fontSize: 12, color: th.text, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
-          </div>
-        </div>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Nav */}
-        <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
-          disabledVals={disabledVals}
-          onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
-        />
-
-        {/* Lang */}
-        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={mFont}>
+  const iconBtns = (compact) => {
+    const s = compact ? { width: 36, height: 30, fontSize: 13 } : {};
+    return (
+      <>
+        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={mFont} style={s}>
           {lang === "zh" ? "EN" : "中"}
         </IconBtn>
-
-        {/* Dark/Light */}
-        <IconBtn onClick={() => setDark((d) => !d)} th={th} font={mFont} style={{ fontSize: 22, paddingBottom: 4 }}>
+        <IconBtn onClick={() => setDark((d) => !d)} th={th} font={mFont} style={{ ...s, fontSize: compact ? 18 : 22, paddingBottom: compact ? 2 : 4 }}>
           {dark ? t.light : t.dark}
         </IconBtn>
+        <IconBtn onClick={() => setShowCS(true)} th={th} font={mFont} style={s}><HeadsetIcon /></IconBtn>
+        <IconBtn onClick={handleShare} th={th} font={mFont} style={s}>{copied ? "✓" : <ShareIcon />}</IconBtn>
+      </>
+    );
+  };
 
-        {/* CS */}
-        <IconBtn onClick={() => setShowCS(true)} th={th} font={mFont}><HeadsetIcon /></IconBtn>
-
-        {/* Share */}
-        <IconBtn onClick={handleShare} th={th} font={mFont}>{copied ? "✓" : <ShareIcon />}</IconBtn>
-      </div>
+  return (
+    <>
+      {isMobile ? (
+        <div style={{ display: "flex", flexDirection: "column", background: th.surface, borderBottom: `0.5px solid ${th.border}`, flexShrink: 0, zIndex: 10, position: "relative" }}>
+          {/* Row 1: compact logo + icon buttons */}
+          <div style={{ height: 52, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
+            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}>
+              <img src="/logo.png" alt="" style={{ height: 48, width: "auto", display: "block" }} />
+              <div style={{ fontSize: 20, lineHeight: 1 }}>
+                <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
+                <span style={{ fontFamily: "Arial, 'Helvetica Neue', sans-serif", color: th.mid, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", marginLeft: 6 }}>LABS</span>
+              </div>
+            </div>
+            <div style={{ flex: 1 }} />
+            <div style={{ display: "flex", gap: 6 }}>{iconBtns(true)}</div>
+          </div>
+          {/* Row 2: nav */}
+          <div style={{ display: "flex", justifyContent: "center", padding: "6px 14px 10px" }}>
+            <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont} sm
+              disabledVals={disabledVals}
+              onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div style={{ height: 72, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
+          {/* Logo */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            <img src="/logo.png" alt="" style={{ height: 72, width: "auto", display: "block" }} />
+            <div>
+              <div style={{ fontSize: 26, lineHeight: 1 }}>
+                <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
+                <span style={{ fontFamily: "Arial, 'Helvetica Neue', sans-serif", color: th.mid, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", marginLeft: 8 }}>LABS</span>
+              </div>
+              <div style={{ fontSize: 12, color: th.text, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
+            </div>
+          </div>
+          <div style={{ flex: 1 }} />
+          <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
+            disabledVals={disabledVals}
+            onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
+          />
+          <div style={{ display: "flex", gap: 14 }}>{iconBtns(false)}</div>
+        </div>
+      )}
 
       {/* Share modal (fallback for non-native share) */}
       <Modal show={showShare} onClose={() => setShowShare(false)} th={th}>
@@ -573,6 +607,7 @@ const PROFILES = {
 function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const SAVED_KEY = "revery_profile_v2";
   const mFont = lang === "en" ? SANS : MONO;
+  const isMobile = useIsMobile();
   const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVED_KEY)); } catch { return null; } };
 
   const [savedData]  = useState(loadSaved);
@@ -784,7 +819,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   // ── Quiz — 2×2 quadrant layout ────────────────────────────────────────────
   const canSubmit = picks.every((p) => p !== null);
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? 16 : 32, overflowY: "auto" }}>
       <div style={{ width: "100%", maxWidth: 560 }}>
         <button onClick={() => setScreen("choose")} style={{
           background: "none", border: "none", color: th.dim, cursor: "pointer",
@@ -797,9 +832,9 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gridTemplateRows: "auto auto",
-          gridAutoFlow: "column",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gridTemplateRows: "auto",
+          gridAutoFlow: "row",
           gap: 14,
           marginBottom: 16,
         }}>
@@ -851,6 +886,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 // ─── DISTILL PAGE ─────────────────────────────────────────────────────────────
 function DistillPage({ t, th, lang, onDistilled }) {
   const mFont = lang === "en" ? SANS : MONO;
+  const isMobile = useIsMobile();
   const [personName,  setPersonName]  = useState("");
   const [avatarUrl,   setAvatarUrl]   = useState(null);
   const [uploads,     setUploads]     = useState([]);
@@ -963,7 +999,7 @@ function DistillPage({ t, th, lang, onDistilled }) {
       </Modal>
 
       {/* Subheader: history button flush right, same style/size as header buttons */}
-      <div style={{ padding: "10px 28px", borderBottom: `0.5px solid ${th.border}`, display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+      <div style={{ padding: `10px ${isMobile ? 16 : 28}px`, borderBottom: `0.5px solid ${th.border}`, display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
         <button onClick={() => setShowHistory(true)} style={{
           padding: "7px 16px", background: CRIMSON, border: "none",
           borderRadius: 6, color: "white", fontSize: 15, cursor: "pointer",
@@ -971,7 +1007,7 @@ function DistillPage({ t, th, lang, onDistilled }) {
         }}>{t.histBtn}</button>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "14px 28px 20px", overflow: "hidden", gap: 12 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: `14px ${isMobile ? 16 : 28}px 20px`, overflow: "hidden", gap: 12 }}>
 
         {/* ── Avatar (left) + Name row ── */}
         <div style={{ display: "flex", gap: 12, flexShrink: 0, alignItems: "flex-end" }}>
@@ -1119,12 +1155,14 @@ function DistillPage({ t, th, lang, onDistilled }) {
 // ─── APP PAGE ─────────────────────────────────────────────────────────────────
 function AppPage({ t, th, lang, persona, onHistory }) {
   const mFont = lang === "en" ? SANS : MONO;
+  const isMobile = useIsMobile();
   const [tab,              setTab]             = useState("chat");
   const [messages,         setMessages]        = useState(persona?.messages || []);
   const [input,            setInput]           = useState("");
   const [loading,          setLoading]         = useState(false);
   const [analyzeInput,     setAnalyzeInput]    = useState("");
   const [analyzeMessages,  setAnalyzeMessages] = useState([]);
+  const [expandedAnalyze,  setExpandedAnalyze] = useState(new Set());
   const [analyzing,        setAnalyzing]       = useState(false);
   const [showSave,         setShowSave]        = useState(false);
   const bottomRef    = useRef();
@@ -1255,8 +1293,8 @@ function AppPage({ t, th, lang, persona, onHistory }) {
         : "You are an emotional analyst. Answer concisely and directly.";
       const firstUserContent = isFirst
         ? (lang === "zh"
-            ? `请分析以下内容中发言者的情感状态、潜台词和真实意图。简洁直接，150字以内。\n\n${userText}`
-            : `Analyze the emotional state, subtext, and true intent of the speaker. Concise, under 150 words.\n\n${userText}`)
+            ? `请分析以下内容中发言者的情感状态、潜台词和真实意图。分析要完整，不要省略。\n\n${userText}`
+            : `Analyze the emotional state, subtext, and true intent of the speaker. Be thorough and complete.\n\n${userText}`)
         : userText;
       const history = [];
       for (const m of analyzeMessages) {
@@ -1271,7 +1309,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
           "anthropic-version": "2023-06-01",
           "anthropic-dangerous-direct-browser-access": "true",
         },
-        body: JSON.stringify({ model: "claude-haiku-4-5", max_tokens: 512, system: sysPrompt, messages: history }),
+        body: JSON.stringify({ model: "claude-haiku-4-5", max_tokens: 2048, system: sysPrompt, messages: history }),
       });
       if (!response.ok) { const err = await response.json(); throw new Error(err.error?.message || response.statusText); }
       const data = await response.json();
@@ -1339,7 +1377,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
         {tab === "chat" ? (
           <>
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: `20px ${isMobile ? 12 : 24}px`, display: "flex", flexDirection: "column", gap: 16 }}>
               {messages.map((msg, i) => (
                 <div key={i} style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 10, alignItems: "flex-end" }}>
                   {msg.role !== "user" && (
@@ -1402,15 +1440,38 @@ function AppPage({ t, th, lang, persona, onHistory }) {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {/* Messages area */}
             {analyzeMessages.length > 0 && (
-              <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-                {analyzeMessages.map((m, i) => (
-                  <div key={i} style={{
-                    padding: "11px 15px", borderRadius: 8, fontSize: 14, lineHeight: 1.8, fontFamily: SANS,
-                    background: m.role === "user" ? "rgba(139,34,82,0.06)" : th.card,
-                    border: `0.5px solid ${m.role === "user" ? "rgba(139,34,82,0.15)" : th.border}`,
-                    color: th.text,
-                  }}>{m.text}</div>
-                ))}
+              <div style={{ flex: 1, overflowY: "auto", padding: `16px ${isMobile ? 12 : 24}px`, display: "flex", flexDirection: "column", gap: 12 }}>
+                {analyzeMessages.map((m, i) => {
+                  const isUser = m.role === "user";
+                  const isLong = isUser && (m.text.length > 180 || m.text.split("\n").length > 3);
+                  const expanded = expandedAnalyze.has(i);
+                  return (
+                    <div key={i}>
+                      <div style={{
+                        padding: "11px 15px", borderRadius: 8, fontSize: 15, lineHeight: 1.8, fontFamily: SANS,
+                        background: isUser ? "rgba(139,34,82,0.06)" : th.card,
+                        border: `0.5px solid ${isUser ? "rgba(139,34,82,0.15)" : th.border}`,
+                        color: th.text, whiteSpace: "pre-wrap",
+                        ...(isLong && !expanded ? {
+                          display: "-webkit-box", WebkitLineClamp: 3,
+                          WebkitBoxOrient: "vertical", overflow: "hidden",
+                        } : {}),
+                      }}>{m.text}</div>
+                      {isLong && (
+                        <button onClick={() => setExpandedAnalyze((prev) => {
+                          const next = new Set(prev);
+                          expanded ? next.delete(i) : next.add(i);
+                          return next;
+                        })} style={{
+                          background: "none", border: "none", color: th.dim, cursor: "pointer",
+                          fontSize: 13, fontFamily: SANS, padding: "4px 2px", marginTop: 2, display: "block",
+                        }}>
+                          {expanded ? "收起 ↑" : "展开 ↓"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
                 {analyzing && (
                   <div style={{ padding: "11px 15px", background: th.card, border: `0.5px solid ${th.border}`, borderRadius: 8, display: "flex", gap: 4, alignItems: "center" }}>
                     {[0,1,2].map((i) => (
@@ -1423,7 +1484,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
             )}
 
             {/* Input area */}
-            <div style={{ padding: analyzeMessages.length > 0 ? "10px 24px 14px" : "20px 24px", borderTop: analyzeMessages.length > 0 ? `0.5px solid ${th.border}` : "none", flexShrink: 0, display: "flex", flexDirection: "column", gap: 10, flex: analyzeMessages.length === 0 ? 1 : 0 }}>
+            <div style={{ padding: analyzeMessages.length > 0 ? `10px ${isMobile ? 12 : 24}px 14px` : `20px ${isMobile ? 12 : 24}px`, borderTop: analyzeMessages.length > 0 ? `0.5px solid ${th.border}` : "none", flexShrink: 0, display: "flex", flexDirection: "column", gap: 10, flex: analyzeMessages.length === 0 ? 1 : 0 }}>
               <textarea
                 value={analyzeInput}
                 onChange={(e) => setAnalyzeInput(e.target.value)}
@@ -1517,7 +1578,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: th.bg, color: th.text, fontFamily: SANS, overflow: "hidden" }}>
+    <div style={{ height: "100dvh", minHeight: "100vh", display: "flex", flexDirection: "column", background: th.bg, color: th.text, fontFamily: SANS, overflow: "hidden" }}>
       <Header
         page={page} onNavChange={handleNavChange}
         dark={dark} setDark={setDark}
