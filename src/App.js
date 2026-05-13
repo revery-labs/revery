@@ -655,14 +655,14 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
     const s = compact ? { width: 36, height: 30, fontSize: 13 } : {};
     return (
       <>
-        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={mFont} style={s}>
+        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={SANS} style={{ ...s, minWidth: 42 }}>
           {lang === "zh" ? "EN" : "中"}
         </IconBtn>
-        <IconBtn onClick={() => setDark((d) => !d)} th={th} font={mFont} style={{ ...s, fontSize: compact ? 18 : 22, paddingBottom: compact ? 2 : 4 }}>
+        <IconBtn onClick={() => setDark((d) => !d)} th={th} font={SANS} style={{ ...s, fontSize: compact ? 15 : 18, paddingBottom: compact ? 1 : 3 }}>
           {dark ? t.light : t.dark}
         </IconBtn>
-        <IconBtn onClick={() => setShowCS(true)} th={th} font={mFont} style={s}><WishIcon /></IconBtn>
-        <IconBtn onClick={handleShare} th={th} font={mFont} style={s}>{copied ? "✓" : <ShareIcon />}</IconBtn>
+        <IconBtn onClick={() => setShowCS(true)} th={th} font={SANS} style={s}><WishIcon /></IconBtn>
+        <IconBtn onClick={handleShare} th={th} font={SANS} style={s}>{copied ? "✓" : <ShareIcon />}</IconBtn>
       </>
     );
   };
@@ -705,11 +705,13 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
             </div>
           </div>
           <div style={{ flex: 1 }} />
-          <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
-            disabledVals={disabledVals}
-            onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
-          />
-          <div style={{ display: "flex", gap: 14 }}>{iconBtns(false)}</div>
+          <div style={{ flexShrink: 0 }}>
+            <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
+              disabledVals={disabledVals}
+              onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>{iconBtns(false)}</div>
         </div>
       )}
 
@@ -1359,7 +1361,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       );
       return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: `8px ${isMobile ? 8 : 20}px 8px` }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: isMobile ? "auto" : "hidden", width: "100%" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: isMobile ? "auto" : "hidden", width: "100%", maxWidth: isMobile ? undefined : 1200, margin: isMobile ? undefined : "0 auto" }}>
             {/* Report card */}
             <div style={{ flex: isMobile ? "none" : 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: isMobile ? "visible" : "hidden", background: th.surface, display: "flex", flexDirection: "column" }}>
               {/* Header */}
