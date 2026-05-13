@@ -687,7 +687,6 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
           <div style={{ display: "flex", justifyContent: "center", padding: "6px 14px 10px" }}>
             <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont} sm
               disabledVals={disabledVals}
-              onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
             />
           </div>
         </div>
@@ -708,7 +707,6 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
           <div style={{ flexShrink: 0 }}>
             <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
               disabledVals={disabledVals}
-              onDisabledClick={(v) => { if (!isPaid && (v === "distill" || v === "app")) onPaywall?.(); }}
             />
           </div>
           <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>{iconBtns(false)}</div>
