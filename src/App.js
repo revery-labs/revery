@@ -1352,16 +1352,16 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       const radarGrid = (scale) => Array.from({ length: radarN }, (_, i) => radarPt(i, scale).join(",")).join(" ");
       const radarData = radarVals.map((v, i) => radarPt(i, v).join(",")).join(" ");
       const Row = ({ label, children, accent, grow = 1 }) => (
-        <div style={{ borderTop: `0.5px solid ${th.border}`, padding: "8px 16px", flex: grow, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
+        <div style={{ borderTop: `0.5px solid ${th.border}`, padding: isMobile ? "8px 12px" : "8px 16px", flex: isMobile ? "none" : grow, display: "flex", flexDirection: "column", overflow: isMobile ? "visible" : "hidden", minHeight: 0 }}>
           <div style={{ fontSize: 11, letterSpacing: "0.12em", color: CRIMSON, fontWeight: 700, fontFamily: MONO, marginBottom: 4, textTransform: "uppercase", flexShrink: 0 }}>{label}</div>
           {children}
         </div>
       );
       return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: `8px ${isMobile ? 8 : 20}px 8px` }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", width: "100%" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: isMobile ? "auto" : "hidden", width: "100%" }}>
             {/* Report card */}
-            <div style={{ flex: 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: "hidden", background: th.surface, display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: isMobile ? "none" : 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: isMobile ? "visible" : "hidden", background: th.surface, display: "flex", flexDirection: "column" }}>
               {/* Header */}
               <div style={{ background: CRIMSON, padding: "9px 18px", textAlign: "center", flexShrink: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "white", fontFamily: SANS, letterSpacing: "0.04em" }}>{t.reportCenter}</div>
@@ -1380,24 +1380,24 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                   </div>
                   <div style={{ fontSize: 12, fontFamily: MONO, color: CRIMSON, fontWeight: 700 }}>{lbPct}%</div>
                 </div>
-                <div style={{ display: "flex" }}>
+                <div style={{ display: "flex", flexWrap: isMobile ? "wrap" : "nowrap" }}>
                   {[
                     { label: t.reportReason, val: `${reasonPct}%`, color: th.text },
                     { label: t.reportRisk, val: t.reportRiskLevels[riskIdx], color: CRIMSON },
                     { label: t.reportInfect, val: t.reportInfectLevels[infectIdx], color: th.text },
                     { label: t.reportPhysician, val: "Dr. R. Labs", color: th.mid },
                   ].map(({ label, val, color }, i) => (
-                    <div key={i} style={{ flex: 1, borderLeft: i > 0 ? `0.5px solid ${th.border}` : "none", paddingLeft: i > 0 ? 10 : 0 }}>
+                    <div key={i} style={{ flex: isMobile ? "0 0 50%" : 1, borderLeft: (!isMobile && i > 0) ? `0.5px solid ${th.border}` : "none", paddingLeft: (!isMobile && i > 0) ? 10 : 0, marginTop: isMobile && i >= 2 ? 4 : 0 }}>
                       <div style={{ fontSize: 7, color: th.dim, fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 1 }}>{label}</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: MONO }}>{val}</div>
                     </div>
                   ))}
                 </div>
               </div>
-              {/* Two-column body */}
-              <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+              {/* Body: two-column on desktop, single-column on mobile */}
+              <div style={{ flex: isMobile ? "none" : 1, display: "flex", flexDirection: isMobile ? "column" : "row", overflow: isMobile ? "visible" : "hidden" }}>
                 {/* Left column */}
-                <div style={{ flex: "0 0 38%", display: "flex", flexDirection: "column", borderRight: `0.5px solid ${th.border}` }}>
+                <div style={{ flex: isMobile ? "none" : "0 0 38%", display: "flex", flexDirection: "column", borderRight: isMobile ? "none" : `0.5px solid ${th.border}`, borderBottom: isMobile ? `0.5px solid ${th.border}` : "none" }}>
                   <Row label={t.reportDiag} accent grow={0.65}>
                     <div style={{ position: "relative" }}>
                       <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: CRIMSON, fontFamily: SANS, lineHeight: 1.1, marginBottom: 4, paddingRight: 44 }}>{profile.name}</div>
@@ -1412,7 +1412,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                       const levelZh = [["稳定","波动","显著","极端"],["正常","轻度","中度","重度"],["未见","偶发","持续","全面"],["自发","外诱","主动","确认"]];
                       const levelEn = [["Stable","Mild","Notable","Extreme"],["Normal","Slight","Moderate","Severe"],["None","Sporadic","Ongoing","Total"],["Casual","Prompted","Aware","Certain"]];
                       return (
-                        <div style={{ flex: 1, display: "flex", gap: 10, alignItems: "stretch", minHeight: 0, paddingTop: 4 }}>
+                        <div style={{ flex: isMobile ? "none" : 1, height: isMobile ? 180 : undefined, display: "flex", gap: 10, alignItems: "stretch", minHeight: 0, paddingTop: 4 }}>
                           {/* SVG — fixed 48% of row width */}
                           <div style={{ flex: "0 0 48%", minWidth: 0, minHeight: 0 }}>
                             <svg viewBox="-10 -8 140 145" width="100%" height="100%" style={{ display: "block" }} preserveAspectRatio="xMidYMid meet">
@@ -1464,7 +1464,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                   </Row>
                 </div>
                 {/* Right column */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <div style={{ flex: isMobile ? "none" : 1, display: "flex", flexDirection: "column" }}>
                   <Row label={t.reportDoctorNote} grow={1.6}>
                     <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65, fontStyle: "italic" }}>{doctorNote}</div>
                   </Row>
@@ -1689,7 +1689,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                     const sel = picks[qi] === oi;
                     return (
                       <div key={oi} onClick={() => setPicks((prev) => { const n = [...prev]; n[qi] = oi; return n; })} style={{
-                        height: 34, maxWidth: 280, padding: "0 10px",
+                        height: 34, width: isMobile ? "100%" : undefined, maxWidth: isMobile ? "none" : 280, padding: "0 10px",
                         background: sel ? "rgba(139,34,82,0.07)" : th.surface,
                         border: `0.5px solid ${sel ? CRIMSON : th.border}`,
                         borderRadius: 6, cursor: "pointer", fontSize: 15,
