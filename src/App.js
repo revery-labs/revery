@@ -134,6 +134,7 @@ const TX = {
     regName: "昵称", regEmail: "邮箱", regPw: "密码（至少6位）", regSubmit: "完成注册",
     regPrivacy: "我同意 Revery Labs 的", regPrivacyLink: "隐私政策及个人信息共享条款",
     paywallTitle: "解锁完整体验", paywallSub: "完成测评后付费，即可使用蒸馏与应用功能",
+    wxMaintTitle: "微信支付维护中", wxMaintSub: "微信支付通道正在维护升级，请使用信用卡支付，或稍后再试。", wxMaintBack: "返回",
   },
   en: {
     nav:       ["Assess", "Distill", "Apply"],
@@ -245,6 +246,7 @@ const TX = {
     regName: "Name", regEmail: "Email", regPw: "Password (6+ chars)", regSubmit: "Create Account",
     regPrivacy: "I agree to Revery Labs'", regPrivacyLink: "Privacy Policy and Data Sharing Terms",
     paywallTitle: "Unlock Full Access", paywallSub: "Pay after your assessment to use Distill & Apply",
+    wxMaintTitle: "WeChat Pay Under Maintenance", wxMaintSub: "WeChat Pay is currently under maintenance. Please use card payment or try again later.", wxMaintBack: "Go back",
   },
 };
 
@@ -388,18 +390,27 @@ const WishIcon = () => (
 
 // ─── PAYWALL MODAL ────────────────────────────────────────────────────────────
 function PaywallModal({ show, onClose, onPay, th, t }) {
+  const [wxMaint, setWxMaint] = useState(false);
+  const handleClose = () => { setWxMaint(false); onClose(); };
   return (
-    <Modal show={show} onClose={onClose} th={th}>
-      <div style={{ fontFamily: SANS, fontSize: 20, fontWeight: 700, color: th.text, marginBottom: 6 }}>{t.paywallTitle}</div>
-      <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6 }}>{t.paywallSub}</div>
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={() => window.open("https://buy.stripe.com/test_7sYeVecaCgpYfIicuwfYY00", "_blank")} style={{ flex: 1, padding: "12px 0", background: "#635BFF", border: "none", borderRadius: 7, color: "white", fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>
-          {t.payCard}
-        </button>
-        <button onClick={() => onPay("wechat")} style={{ flex: 1, padding: "12px 0", background: "#07C160", border: "none", borderRadius: 7, color: "white", fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>
-          {t.payWX}
-        </button>
-      </div>
+    <Modal show={show} onClose={handleClose} th={th}>
+      {wxMaint ? (
+        <>
+          <div style={{ textAlign: "center", fontSize: 28, marginBottom: 10 }}>🔧</div>
+          <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.wxMaintTitle}</div>
+          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.wxMaintSub}</div>
+          <button onClick={() => setWxMaint(false)} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.wxMaintBack}</button>
+        </>
+      ) : (
+        <>
+          <div style={{ fontFamily: SANS, fontSize: 20, fontWeight: 700, color: th.text, marginBottom: 6 }}>{t.paywallTitle}</div>
+          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6 }}>{t.paywallSub}</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={() => window.open("https://buy.stripe.com/test_7sYeVecaCgpYfIicuwfYY00", "_blank")} style={{ flex: 1, padding: "12px 0", background: "#635BFF", border: "none", borderRadius: 7, color: "white", fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payCard}</button>
+            <button onClick={() => setWxMaint(true)} style={{ flex: 1, padding: "12px 0", background: "#07C160", border: "none", borderRadius: 7, color: "white", fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payWX}</button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 }
@@ -1271,6 +1282,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   const [savedData]   = useState(loadSaved);
   const [screen,      setScreen]     = useState(savedData?.source ? "result" : "choose");
+  const [wxMaint,     setWxMaint]    = useState(false);
   const [picks,       setPicks]      = useState(Array(4).fill(null));
   const [mbti,        setMbti]       = useState("");
   const [enneagram,   setEnneagram]  = useState("");
@@ -1316,7 +1328,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
         ))}
         <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
           <button onClick={() => window.open("https://buy.stripe.com/test_7sYeVecaCgpYfIicuwfYY00", "_blank")} style={{ flex: 1, padding: "10px 0", background: "#635BFF", border: "none", borderRadius: 7, color: "white", fontSize: 13, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payCard}</button>
-          <button onClick={() => onPaymentSuccess?.("wechat")} style={{ flex: 1, padding: "10px 0", background: "#07C160", border: "none", borderRadius: 7, color: "white", fontSize: 13, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payWX}</button>
+          <button onClick={() => setWxMaint(true)} style={{ flex: 1, padding: "10px 0", background: "#07C160", border: "none", borderRadius: 7, color: "white", fontSize: 13, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payWX}</button>
         </div>
       </div>
     );
@@ -1358,6 +1370,13 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
         </div>
       );
       return (
+        <>
+        <Modal show={wxMaint} onClose={() => setWxMaint(false)} th={th}>
+          <div style={{ textAlign: "center", fontSize: 28, marginBottom: 10 }}>🔧</div>
+          <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.wxMaintTitle}</div>
+          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.wxMaintSub}</div>
+          <button onClick={() => setWxMaint(false)} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.wxMaintBack}</button>
+        </Modal>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: `8px ${isMobile ? 8 : 20}px 8px` }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", width: "100%", maxWidth: isMobile ? undefined : 1200, margin: isMobile ? undefined : "0 auto" }}>
             {/* Report card */}
@@ -1516,12 +1535,20 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             <PaymentBlock />
           </div>
         </div>
+        </>
       );
     }
 
     // ── Existing profile: standard card format ───────────────────────────────
     const extraTag = [profileData?.mbti, profileData?.enn, profileData?.zodiacIdx >= 0 ? t.zodiacs[profileData.zodiacIdx] : ""].filter(Boolean).join(" · ");
     return (
+      <>
+      <Modal show={wxMaint} onClose={() => setWxMaint(false)} th={th}>
+        <div style={{ textAlign: "center", fontSize: 28, marginBottom: 10 }}>🔧</div>
+        <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.wxMaintTitle}</div>
+        <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.wxMaintSub}</div>
+        <button onClick={() => setWxMaint(false)} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.wxMaintBack}</button>
+      </Modal>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Fixed top: profile header only */}
         <div style={{ padding: "20px 24px 16px", flexShrink: 0, background: th.bg, borderBottom: `0.5px solid ${th.border}` }}>
@@ -1562,6 +1589,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
           </div>
         </div>
       </div>
+      </>
     );
   } // end result
 
