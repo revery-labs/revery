@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { saveWish, saveUser, saveSession } from "./supabase";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -2546,6 +2547,7 @@ export default function App() {
 
       {/* Registration modal — shown after payment */}
       <RegisterModal show={showRegister} onClose={() => setShowRegister(false)} onRegister={handleRegister} th={th} t={t} />
+      <Analytics />
     </div>
   );
 }
