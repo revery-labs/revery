@@ -1364,7 +1364,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             <div style={{ flex: isMobile ? "none" : 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: "visible", background: th.surface, display: "flex", flexDirection: "column" }}>
               {/* Header */}
               <div style={{ background: CRIMSON, padding: "9px 18px", textAlign: "center", flexShrink: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "white", fontFamily: SANS, letterSpacing: "0.04em" }}>{t.reportCenter}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "white", fontFamily: SANS, letterSpacing: "0.04em" }}>{t.reportCenter}</div>
               </div>
               {/* Case info */}
               <div style={{ padding: "4px 18px", background: th.card, display: "flex", justifyContent: "space-between", flexShrink: 0, borderBottom: `0.5px solid ${th.border}` }}>
