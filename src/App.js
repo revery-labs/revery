@@ -1352,16 +1352,16 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       const radarGrid = (scale) => Array.from({ length: radarN }, (_, i) => radarPt(i, scale).join(",")).join(" ");
       const radarData = radarVals.map((v, i) => radarPt(i, v).join(",")).join(" ");
       const Row = ({ label, children, accent, grow = 1 }) => (
-        <div style={{ borderTop: `0.5px solid ${th.border}`, padding: isMobile ? "8px 12px" : "8px 16px", flex: isMobile ? "none" : grow, display: "flex", flexDirection: "column", overflow: isMobile ? "visible" : "hidden", minHeight: 0 }}>
+        <div style={{ borderTop: `0.5px solid ${th.border}`, padding: isMobile ? "8px 12px" : "8px 16px", flex: isMobile ? "none" : grow, display: "flex", flexDirection: "column", overflow: "visible" }}>
           <div style={{ fontSize: 11, letterSpacing: "0.12em", color: CRIMSON, fontWeight: 700, fontFamily: MONO, marginBottom: 4, textTransform: "uppercase", flexShrink: 0 }}>{label}</div>
           {children}
         </div>
       );
       return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: `8px ${isMobile ? 8 : 20}px 8px` }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: isMobile ? "auto" : "hidden", width: "100%", maxWidth: isMobile ? undefined : 1200, margin: isMobile ? undefined : "0 auto" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", width: "100%", maxWidth: isMobile ? undefined : 1200, margin: isMobile ? undefined : "0 auto" }}>
             {/* Report card */}
-            <div style={{ flex: isMobile ? "none" : 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: isMobile ? "visible" : "hidden", background: th.surface, display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: isMobile ? "none" : 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: "visible", background: th.surface, display: "flex", flexDirection: "column" }}>
               {/* Header */}
               <div style={{ background: CRIMSON, padding: "9px 18px", textAlign: "center", flexShrink: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "white", fontFamily: SANS, letterSpacing: "0.04em" }}>{t.reportCenter}</div>
@@ -1395,7 +1395,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                 </div>
               </div>
               {/* Body: two-column on desktop, single-column on mobile */}
-              <div style={{ flex: isMobile ? "none" : 1, display: "flex", flexDirection: isMobile ? "column" : "row", overflow: isMobile ? "visible" : "hidden" }}>
+              <div style={{ flex: isMobile ? "none" : 1, display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "visible" }}>
                 {/* Left column */}
                 <div style={{ flex: isMobile ? "none" : "0 0 38%", display: "flex", flexDirection: "column", borderRight: isMobile ? "none" : `0.5px solid ${th.border}`, borderBottom: isMobile ? `0.5px solid ${th.border}` : "none" }}>
                   <Row label={t.reportDiag} accent grow={0.65}>
@@ -1412,7 +1412,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                       const levelZh = [["稳定","波动","显著","极端"],["正常","轻度","中度","重度"],["未见","偶发","持续","全面"],["自发","外诱","主动","确认"]];
                       const levelEn = [["Stable","Mild","Notable","Extreme"],["Normal","Slight","Moderate","Severe"],["None","Sporadic","Ongoing","Total"],["Casual","Prompted","Aware","Certain"]];
                       return (
-                        <div style={{ flex: isMobile ? "none" : 1, height: isMobile ? 180 : undefined, display: "flex", gap: 10, alignItems: "stretch", minHeight: 0, paddingTop: 4 }}>
+                        <div style={{ flex: isMobile ? "none" : 1, height: isMobile ? 180 : 220, display: "flex", gap: 10, alignItems: "stretch", paddingTop: 4 }}>
                           {/* SVG — fixed 48% of row width */}
                           <div style={{ flex: "0 0 48%", minWidth: 0, minHeight: 0 }}>
                             <svg viewBox="-10 -8 140 145" width="100%" height="100%" style={{ display: "block" }} preserveAspectRatio="xMidYMid meet">
