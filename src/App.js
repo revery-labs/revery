@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { saveWish, saveUser, saveSession } from "./supabase";
+import { saveWish, saveUser, saveSession, signUpUser, signInUser, signOutUser, getSessionUser } from "./supabase";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const CRIMSON    = "#8b2252";
@@ -136,6 +136,11 @@ const TX = {
     regPrivacy: "我同意 Revery Labs 的", regPrivacyLink: "隐私政策及个人信息共享条款",
     paywallTitle: "解锁完整体验", paywallSub: "完成测评后付费，即可使用蒸馏与应用功能",
     wxMaintTitle: "微信支付维护中", wxMaintSub: "微信支付通道正在维护升级，请使用信用卡支付，或稍后再试。", wxMaintBack: "返回",
+    loginBtn: "登入", loginTitle: "欢迎回来", loginSub: "登入你的账号继续使用",
+    loginEmail: "邮箱", loginPw: "密码", loginSubmit: "登入",
+    loginError: "邮箱或密码不正确，请重试", loginNoAcc: "还没有账号？完成测评并付费后注册",
+    acctTitle: "个人中心", acctMember: "付费会员", acctLogout: "退出登录",
+    acctSection: "账号管理", acctRegDate: "会员状态",
   },
   en: {
     nav:       ["Assess", "Distill", "Apply"],
@@ -248,6 +253,11 @@ const TX = {
     regPrivacy: "I agree to Revery Labs'", regPrivacyLink: "Privacy Policy and Data Sharing Terms",
     paywallTitle: "Unlock Full Access", paywallSub: "Pay after your assessment to use Distill & Apply",
     wxMaintTitle: "WeChat Pay Under Maintenance", wxMaintSub: "WeChat Pay is currently under maintenance. Please use card payment or try again later.", wxMaintBack: "Go back",
+    loginBtn: "Sign in", loginTitle: "Welcome back", loginSub: "Sign in to your account",
+    loginEmail: "Email", loginPw: "Password", loginSubmit: "Sign in",
+    loginError: "Incorrect email or password", loginNoAcc: "No account? Complete assessment and pay to register",
+    acctTitle: "Account", acctMember: "Paid Member", acctLogout: "Sign out",
+    acctSection: "Account", acctRegDate: "Membership",
   },
 };
 
@@ -551,16 +561,26 @@ function RegisterModal({ show, onClose, onRegister, th, t }) {
   const [pw,      setPw]      = useState("");
   const [agreed,      setAgreed]      = useState(false);
   const [done,        setDone]        = useState(false);
+  const [loading,     setLoading]     = useState(false);
+  const [regError,    setRegError]    = useState("");
   const [showPrivacy, setShowPrivacy] = useState(false);
 
-  const canSubmit = name.trim() && email.includes("@") && pw.length >= 6 && agreed;
+  const canSubmit = name.trim() && email.includes("@") && pw.length >= 6 && agreed && !loading;
   const fieldSt = { width: "100%", boxSizing: "border-box", background: th.input, border: `0.5px solid ${th.border}`, borderRadius: 6, padding: "11px 14px", color: th.text, fontSize: 14, fontFamily: SANS, outline: "none" };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
+    setLoading(true);
+    setRegError("");
     const info = { name: name.trim(), email: email.trim() };
+    const { error } = await signUpUser({ email: info.email, password: pw, name: info.name });
+    if (error && error !== "User already registered") {
+      setLoading(false);
+      setRegError(error);
+      return;
+    }
     try { localStorage.setItem("revery_user", JSON.stringify(info)); } catch {}
-    saveUser(info);
+    setLoading(false);
     setDone(true);
     setTimeout(() => onRegister(info), 900);
   };
@@ -606,6 +626,7 @@ function RegisterModal({ show, onClose, onRegister, th, t }) {
                   >{t.regPrivacyLink}</span>
                 </span>
               </label>
+              {regError && <div style={{ fontSize: 12, color: CRIMSON, fontFamily: SANS }}>{regError}</div>}
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
@@ -616,7 +637,7 @@ function RegisterModal({ show, onClose, onRegister, th, t }) {
                   transition: "opacity 0.2s",
                 }}
               >
-                {t.regSubmit}
+                {loading ? "…" : t.regSubmit}
               </button>
             </div>
           </>
@@ -624,6 +645,90 @@ function RegisterModal({ show, onClose, onRegister, th, t }) {
       </div>
     </div>
     </>
+  );
+}
+
+// ─── LOGIN MODAL ──────────────────────────────────────────────────────────────
+function LoginModal({ show, onClose, onLogin, th, t }) {
+  const [email,   setEmail]   = useState("");
+  const [pw,      setPw]      = useState("");
+  const [error,   setError]   = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const fieldSt = { width: "100%", boxSizing: "border-box", background: th.input, border: `0.5px solid ${th.border}`, borderRadius: 6, padding: "11px 14px", color: th.text, fontSize: 14, fontFamily: SANS, outline: "none" };
+  const canSubmit = email.includes("@") && pw.length >= 6 && !loading;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setLoading(true);
+    setError("");
+    const { data, error: err } = await signInUser({ email: email.trim(), password: pw });
+    setLoading(false);
+    if (err) { setError(t.loginError); return; }
+    try { localStorage.setItem("revery_user", JSON.stringify(data)); } catch {}
+    onLogin(data);
+  };
+
+  if (!show) return null;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: th.surface, border: `0.5px solid ${th.border}`, borderRadius: 14, padding: "32px", maxWidth: 360, width: "90%", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{t.loginTitle}</div>
+        <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24 }}>{t.loginSub}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input placeholder={t.loginEmail} value={email} onChange={(e) => setEmail(e.target.value)} type="email" style={fieldSt} />
+          <input placeholder={t.loginPw} value={pw} onChange={(e) => setPw(e.target.value)} type="password" style={fieldSt} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
+        </div>
+        {error && <div style={{ fontSize: 12, color: CRIMSON, fontFamily: SANS, marginTop: 8 }}>{error}</div>}
+        <button onClick={handleSubmit} disabled={!canSubmit} style={{ width: "100%", marginTop: 20, padding: "13px 0", background: CRIMSON, border: "none", borderRadius: 7, color: "white", fontSize: 15, fontFamily: SANS, fontWeight: 600, cursor: canSubmit ? "pointer" : "default", opacity: canSubmit ? 1 : 0.5, transition: "opacity 0.2s" }}>
+          {loading ? "…" : t.loginSubmit}
+        </button>
+        <div style={{ fontSize: 12, color: th.dim, fontFamily: SANS, marginTop: 16, lineHeight: 1.6, textAlign: "center" }}>{t.loginNoAcc}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ACCOUNT PAGE ─────────────────────────────────────────────────────────────
+function AccountPage({ user, onLogout, th, t }) {
+  const isMobile = useIsMobile();
+  const initial = (user?.name || user?.email || "U")[0].toUpperCase();
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", overflow: "auto", padding: isMobile ? "32px 20px" : "48px 24px" }}>
+      <div style={{ width: "100%", maxWidth: 480 }}>
+        <div style={{ fontSize: 11, letterSpacing: "0.16em", color: CRIMSON, fontFamily: MONO, fontWeight: 700, textTransform: "uppercase", marginBottom: 20 }}>{t.acctTitle}</div>
+
+        {/* User card */}
+        <div style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "28px 24px", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: CRIMSON, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: "white", fontFamily: SANS }}>{initial}</span>
+            </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: th.text, fontFamily: SANS, marginBottom: 2 }}>{user?.name}</div>
+              <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS }}>{user?.email}</div>
+            </div>
+          </div>
+          <div style={{ borderTop: `0.5px solid ${th.border}`, paddingTop: 16 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.12em", color: th.dim, fontFamily: MONO, textTransform: "uppercase", marginBottom: 8 }}>{t.acctRegDate}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: CRIMSON + "1a", borderRadius: 20, padding: "5px 14px" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: CRIMSON, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: CRIMSON, fontFamily: SANS, fontWeight: 600 }}>{t.acctMember}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sign out */}
+        <button
+          onClick={onLogout}
+          style={{ width: "100%", padding: "13px 0", background: "transparent", border: `0.5px solid ${th.border}`, borderRadius: 8, color: th.mid, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 500, transition: "color 0.15s, border-color 0.15s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = CRIMSON; e.currentTarget.style.borderColor = CRIMSON; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; }}
+        >
+          {t.acctLogout}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -639,7 +744,7 @@ function useIsMobile() {
 }
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid, persona, onPaywall }) {
+function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid, persona, onPaywall, user, onLogin, onAccount }) {
   const [showShare, setShowShare] = useState(false);
   const [showCS,    setShowCS]    = useState(false);
   const [copied,    setCopied]    = useState(false);
@@ -665,6 +770,7 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
 
   const iconBtns = (compact) => {
     const s = compact ? { width: 36, height: 30, fontSize: 13 } : {};
+    const userInitial = (user?.name || user?.email || "")[0]?.toUpperCase();
     return (
       <>
         <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={SANS} style={{ ...s, minWidth: 42 }}>
@@ -675,6 +781,15 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
         </IconBtn>
         <IconBtn onClick={() => setShowCS(true)} th={th} font={SANS} style={s}><WishIcon /></IconBtn>
         <IconBtn onClick={handleShare} th={th} font={SANS} style={s}>{copied ? "✓" : <ShareIcon />}</IconBtn>
+        {user ? (
+          <button onClick={onAccount} style={{ width: compact ? 30 : 34, height: compact ? 30 : 34, borderRadius: "50%", background: CRIMSON, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: "white", fontFamily: SANS }}>{userInitial}</span>
+          </button>
+        ) : (
+          <IconBtn onClick={onLogin} th={th} font={SANS} style={{ ...s, minWidth: 42, fontSize: compact ? 11 : 12 }}>
+            {t.loginBtn}
+          </IconBtn>
+        )}
       </>
     );
   };
@@ -2472,18 +2587,30 @@ Write like someone genuinely helping a friend decode a situation, not writing a 
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [dark,           setDark]           = useState(false);
-  const [lang,           setLang]           = useState("zh");
-  const [page,           setPage]           = useState("assess");
-  const [persona,        setPersona]        = useState(null);
-  const [isPaid,         setIsPaid]         = useState(() => {
-    try { return !!JSON.parse(localStorage.getItem("revery_user")); } catch { return false; }
+  const [dark,    setDark]    = useState(false);
+  const [lang,    setLang]    = useState("zh");
+  const [page,    setPage]    = useState("assess");
+  const [persona, setPersona] = useState(null);
+  const [user,    setUser]    = useState(() => {
+    try { return JSON.parse(localStorage.getItem("revery_user")) || null; } catch { return null; }
   });
   const [showPaywall,  setShowPaywall]  = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showLogin,    setShowLogin]    = useState(false);
 
+  const isPaid = !!user;
   const th = mkTh(dark);
   const t  = TX[lang];
+
+  // Restore Supabase session on mount
+  useEffect(() => {
+    getSessionUser().then((u) => {
+      if (u && !user) {
+        setUser(u);
+        try { localStorage.setItem("revery_user", JSON.stringify(u)); } catch {}
+      }
+    });
+  }, []); // eslint-disable-line
 
   const handleDistilled = (p) => {
     setPersona(p);
@@ -2512,12 +2639,26 @@ export default function App() {
 
   const handleRegister = (info) => {
     setShowRegister(false);
-    // localStorage was written by RegisterModal before this callback fires
-    setIsPaid(!!info);
+    setUser(info);
     setPage("distill");
   };
 
+  const handleLogin = (info) => {
+    setUser(info);
+    setShowLogin(false);
+    setPage("distill");
+  };
+
+  const handleLogout = async () => {
+    await signOutUser();
+    localStorage.removeItem("revery_user");
+    setUser(null);
+    setPersona(null);
+    setPage("assess");
+  };
+
   const handleNavChange = (dest) => {
+    if (page === "account") { setPage(dest); return; }
     if (page === "app" && dest !== "app" && !persona?.viewMode) return;
     if (!isPaid && (dest === "distill" || dest === "app")) return;
     if (dest === "app" && !persona) return;
@@ -2534,19 +2675,21 @@ export default function App() {
         th={th} t={t}
         isPaid={isPaid} persona={persona}
         onPaywall={() => setShowPaywall(true)}
+        user={user}
+        onLogin={() => setShowLogin(true)}
+        onAccount={() => setPage("account")}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {page === "assess"  && <AssessPage t={t} th={th} lang={lang} onPaymentSuccess={handlePaymentSuccess} />}
-        {page === "distill" && <DistillPage t={t} th={th} lang={lang} onDistilled={handleDistilled} />}
-        {page === "app"     && <AppPage t={t} th={th} lang={lang} persona={persona} onHistory={handleAppHistory} />}
+        {page === "assess"   && <AssessPage t={t} th={th} lang={lang} onPaymentSuccess={handlePaymentSuccess} />}
+        {page === "distill"  && <DistillPage t={t} th={th} lang={lang} onDistilled={handleDistilled} />}
+        {page === "app"      && <AppPage t={t} th={th} lang={lang} persona={persona} onHistory={handleAppHistory} />}
+        {page === "account"  && <AccountPage user={user} onLogout={handleLogout} th={th} t={t} />}
       </div>
 
-      {/* Paywall modal — triggered when clicking locked nav tabs */}
       <PaywallModal show={showPaywall} onClose={() => setShowPaywall(false)} onPay={() => { setShowPaywall(false); handlePaymentSuccess(); }} th={th} t={t} />
-
-      {/* Registration modal — shown after payment */}
       <RegisterModal show={showRegister} onClose={() => setShowRegister(false)} onRegister={handleRegister} th={th} t={t} />
+      <LoginModal show={showLogin} onClose={() => setShowLogin(false)} onLogin={handleLogin} th={th} t={t} />
       <Analytics />
     </div>
   );

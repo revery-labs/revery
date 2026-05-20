@@ -44,3 +44,46 @@ export async function saveSession({ type, personaName, target, lang, messages, a
     analysis:     analysisText || null,
   });
 }
+
+// ── auth ───────────────────────────────────────────────────────────────────────
+
+export async function signUpUser({ email, password, name }) {
+  if (!supabase) return { error: "Supabase not configured" };
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) return { error: error.message };
+  await supabase.from("users").upsert(
+    { email, name, is_paid: true, updated_at: new Date().toISOString() },
+    { onConflict: "email" }
+  );
+  return { data: { email, name } };
+}
+
+export async function signInUser({ email, password }) {
+  if (!supabase) return { error: "Supabase not configured" };
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { error: error.message };
+  const { data: profile } = await supabase
+    .from("users")
+    .select("name, email, is_paid")
+    .eq("email", email)
+    .single();
+  if (!profile?.is_paid) return { error: "no_access" };
+  return { data: { email: profile.email, name: profile.name } };
+}
+
+export async function signOutUser() {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+}
+
+export async function getSessionUser() {
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.email) return null;
+  const { data } = await supabase
+    .from("users")
+    .select("name, email, is_paid")
+    .eq("email", session.user.email)
+    .single();
+  return data?.is_paid ? { email: data.email, name: data.name } : null;
+}
