@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { saveWish, saveUser, saveSession, signUpUser, signInUser, signOutUser, getSessionUser } from "./supabase";
+import { saveWish, saveUser, saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail } from "./supabase";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const CRIMSON    = "#8b2252";
@@ -62,7 +62,7 @@ const TX = {
     reportLBConc: "恋爱脑浓度", reportReason: "理智保留量", reportRisk: "风险等级", reportInfect: "传染性", reportPhysician: "主治医师",
     reportRiskLevels: ["低危", "中危", "高危", "极高危"],
     reportInfectLevels: ["一般", "较强", "强", "极强"],
-    reportFooter: "本报告由 Revery Labs 恋爱脑诊断中心出具 · 如有雷同，说明你确实病了",
+    reportFooter: "本报告由 Revery Labs 出具 · 仅供娱乐与自我反思参考 · 如有雷同，说明你确实病了",
     reportStamp: "已确诊",
     reportRetake: "重新确诊",
     // assess - extended
@@ -76,7 +76,7 @@ const TX = {
     submitExisting: "生成我的画像",
     profileLabel: "你的情感档案",
     sectionTitles: ["人格底色","反差洞察","人格镜像","适配伴侣","事业发展"],
-    premCopy: "先理解自己，才能真正赢得关系。\n不是虚拟情侣，不是测评内容消费——是你在真实人际关系中的AI军师。\n基于你的性格数据，给出个性化的关系决策。",
+    premCopy: "基于你是这样的人——\n你现在这段关系 / 这个困境，该怎么办？\n留下邮箱，提前解锁专属分析。",
     back: "← 返回",
     // distill
     herName:    "她叫什么",
@@ -134,8 +134,8 @@ const TX = {
     regTitle: "创建账号", regSub: "解锁蒸馏与应用功能",
     regName: "昵称", regEmail: "邮箱", regPw: "密码（至少6位）", regSubmit: "完成注册",
     regPrivacy: "我同意 Revery Labs 的", regPrivacyLink: "隐私政策及个人信息共享条款",
-    paywallTitle: "解锁完整体验", paywallSub: "完成测评后付费，即可使用蒸馏与应用功能",
-    wxMaintTitle: "微信支付维护中", wxMaintSub: "微信支付通道正在维护升级，请使用信用卡支付，或稍后再试。", wxMaintBack: "返回",
+    paywallTitle: "提前解锁 · 限量内测", paywallSub: "留下邮箱，功能上线时第一时间通知你",
+    emailPH: "你的邮箱地址", emailSubmit: "提前解锁", emailSuccess: "已收到！", emailSuccessSub: "你将是第一批收到通知的人，感谢支持。", disclaimer: "仅供娱乐与自我反思参考",
     loginBtn: "登入", loginTitle: "欢迎回来", loginSub: "登入你的账号继续使用",
     loginEmail: "邮箱", loginPw: "密码", loginSubmit: "登入",
     loginError: "邮箱或密码不正确，请重试", loginNoAcc: "还没有账号？完成测评并付费后注册",
@@ -181,7 +181,7 @@ const TX = {
     reportLBConc: "Love Brain Conc.", reportReason: "Reason Ret.", reportRisk: "Risk Level", reportInfect: "Contagion", reportPhysician: "Physician",
     reportRiskLevels: ["Low", "Moderate", "High", "Critical"],
     reportInfectLevels: ["Low", "Moderate", "High", "Extreme"],
-    reportFooter: "Issued by Revery Labs · For entertainment only · If this is accurate, that's on you",
+    reportFooter: "Issued by Revery Labs · For entertainment and self-reflection purposes only · If this is accurate, that's on you",
     reportStamp: "CONFIRMED",
     reportRetake: "Re-diagnose",
     // assess - extended
@@ -195,7 +195,7 @@ const TX = {
     submitExisting: "Build My Profile",
     profileLabel: "Your Emotional Profile",
     sectionTitles: ["Core Nature","Hidden Contrast","Personality Mirror","Ideal Partner","Career Path"],
-    premCopy: "Understand yourself first — then truly win in relationships.\nNot a virtual partner. Not personality content. Your AI strategist for real human connections.\nPersonalized relationship decisions based on your personality data.",
+    premCopy: "Based on who you are —\nhow should you handle this relationship / this situation?\nDrop your email to unlock your personalized analysis.",
     back: "← Back",
     herName:    "Her name",
     herNamePH:  "A name, or a nickname only you know",
@@ -251,8 +251,8 @@ const TX = {
     regTitle: "Create Account", regSub: "Unlock Distill & Apply",
     regName: "Name", regEmail: "Email", regPw: "Password (6+ chars)", regSubmit: "Create Account",
     regPrivacy: "I agree to Revery Labs'", regPrivacyLink: "Privacy Policy and Data Sharing Terms",
-    paywallTitle: "Unlock Full Access", paywallSub: "Pay after your assessment to use Distill & Apply",
-    wxMaintTitle: "WeChat Pay Under Maintenance", wxMaintSub: "WeChat Pay is currently under maintenance. Please use card payment or try again later.", wxMaintBack: "Go back",
+    paywallTitle: "Early Access", paywallSub: "Drop your email — we'll notify you when it goes live",
+    emailPH: "your@email.com", emailSubmit: "Unlock Early", emailSuccess: "You're in!", emailSuccessSub: "You'll be among the first to know when it launches. Thanks!", disclaimer: "For entertainment and self-reflection purposes only",
     loginBtn: "Sign in", loginTitle: "Welcome back", loginSub: "Sign in to your account",
     loginEmail: "Email", loginPw: "Password", loginSubmit: "Sign in",
     loginError: "Incorrect email or password", loginNoAcc: "No account? Complete assessment and pay to register",
@@ -350,10 +350,10 @@ function Seg({ opts, val, onChange, th, sm = false, disabledVals = [], onDisable
             flex: 1, position: "relative", zIndex: 1,
             background: "none", border: "none",
             padding: sm ? "6px 16px" : "8px 22px",
-            fontSize: segFontSize ?? (sm ? "13px" : "15px"), letterSpacing: "0.04em",
+            fontSize: dis ? (sm ? "11px" : "12px") : (segFontSize ?? (sm ? "13px" : "15px")), letterSpacing: "0.04em",
             cursor: dis ? "not-allowed" : "pointer",
             color: val === o.v ? "white" : th.dim,
-            opacity: dis ? 0.35 : 1,
+            opacity: dis ? 0.2 : 1,
             fontFamily: font ?? MONO, transition: "color 0.2s, opacity 0.2s", borderRadius: 100, whiteSpace: "nowrap",
           }}>{o.l}</button>
         );
@@ -400,26 +400,43 @@ const WishIcon = () => (
 );
 
 // ─── PAYWALL MODAL ────────────────────────────────────────────────────────────
-function PaywallModal({ show, onClose, onPay, th, t }) {
-  const [wxMaint, setWxMaint] = useState(false);
-  const handleClose = () => { setWxMaint(false); onClose(); };
+function PaywallModal({ show, onClose, lang, th, t }) {
+  const [email, setEmail] = useState("");
+  const [sent,  setSent]  = useState(false);
+  const canSubmit = email.includes("@") && email.includes(".");
+  const handleClose = () => { setSent(false); setEmail(""); onClose(); };
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    await saveInterestEmail(email, lang);
+    setSent(true);
+  };
   return (
     <Modal show={show} onClose={handleClose} th={th}>
-      {wxMaint ? (
+      {sent ? (
         <>
-          <div style={{ textAlign: "center", fontSize: 28, marginBottom: 10 }}>🔧</div>
-          <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.wxMaintTitle}</div>
-          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.wxMaintSub}</div>
-          <button onClick={() => setWxMaint(false)} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.wxMaintBack}</button>
+          <div style={{ textAlign: "center", fontSize: 32, marginBottom: 10 }}>✉️</div>
+          <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.emailSuccess}</div>
+          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.emailSuccessSub}</div>
+          <button onClick={handleClose} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>OK</button>
         </>
       ) : (
         <>
           <div style={{ fontFamily: SANS, fontSize: 20, fontWeight: 700, color: th.text, marginBottom: 6 }}>{t.paywallTitle}</div>
-          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6 }}>{t.paywallSub}</div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={() => window.open("https://buy.stripe.com/test_7sYeVecaCgpYfIicuwfYY00", "_blank")} style={{ flex: 1, padding: "12px 0", background: "#635BFF", border: "none", borderRadius: 7, color: "white", fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payCard}</button>
-            <button onClick={() => setWxMaint(true)} style={{ flex: 1, padding: "12px 0", background: "#07C160", border: "none", borderRadius: 7, color: "white", fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payWX}</button>
-          </div>
+          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 16, lineHeight: 1.6 }}>{t.paywallSub}</div>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+            placeholder={t.emailPH}
+            style={{ width: "100%", boxSizing: "border-box", background: th.input, border: `1px solid ${th.border}`, borderRadius: 7, padding: "11px 14px", color: th.text, fontSize: 14, fontFamily: SANS, outline: "none", marginBottom: 10 }}
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            style={{ width: "100%", padding: "12px 0", background: canSubmit ? CRIMSON : th.border, border: "none", borderRadius: 7, color: canSubmit ? "white" : th.dim, fontSize: 14, cursor: canSubmit ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, transition: "background 0.2s" }}
+          >{t.emailSubmit}</button>
+          <div style={{ marginTop: 14, fontSize: 11, color: th.dim, fontFamily: SANS, textAlign: "center" }}>{t.disclaimer}</div>
         </>
       )}
     </Modal>
@@ -1398,7 +1415,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   const [savedData]   = useState(loadSaved);
   const [screen,      setScreen]     = useState(savedData?.source ? "result" : "choose");
-  const [wxMaint,     setWxMaint]    = useState(false);
+  const [payEmail,    setPayEmail]   = useState("");
+  const [payEmailSent, setPayEmailSent] = useState(false);
   const [picks,       setPicks]      = useState(Array(4).fill(null));
   const [mbti,        setMbti]       = useState("");
   const [enneagram,   setEnneagram]  = useState("");
@@ -1437,17 +1455,46 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   // ── Result ────────────────────────────────────────────────────────────────
   if (screen === "result" && profile) {
-    const PaymentBlock = () => (
-      <div style={{ marginTop: 16, background: th.card, border: `0.5px solid ${th.border}`, borderRadius: 10, padding: "16px 18px" }}>
-        {t.premCopy.split("\n").map((line, i) => (
-          <p key={i} style={{ fontSize: i === 0 ? 14 : 12, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? th.text : th.mid, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
-        ))}
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-          <button onClick={() => window.open("https://buy.stripe.com/test_7sYeVecaCgpYfIicuwfYY00", "_blank")} style={{ flex: 1, padding: "10px 0", background: "#635BFF", border: "none", borderRadius: 7, color: "white", fontSize: 13, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payCard}</button>
-          <button onClick={() => setWxMaint(true)} style={{ flex: 1, padding: "10px 0", background: "#07C160", border: "none", borderRadius: 7, color: "white", fontSize: 13, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.payWX}</button>
+    const PaymentBlock = () => {
+      const canSub = payEmail.includes("@") && payEmail.includes(".");
+      const handleSub = async () => {
+        if (!canSub) return;
+        await saveInterestEmail(payEmail, lang);
+        setPayEmailSent(true);
+      };
+      return (
+        <div style={{ marginTop: 16, background: th.card, border: `0.5px solid ${th.border}`, borderRadius: 10, padding: "16px 18px" }}>
+          {payEmailSent ? (
+            <>
+              <div style={{ fontSize: 14, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6, textAlign: "center" }}>{t.emailSuccess}</div>
+              <div style={{ fontSize: 12, color: th.mid, fontFamily: SANS, lineHeight: 1.65, textAlign: "center" }}>{t.emailSuccessSub}</div>
+            </>
+          ) : (
+            <>
+              {t.premCopy.split("\n").map((line, i) => (
+                <p key={i} style={{ fontSize: i === 0 ? 14 : 12, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? th.text : th.mid, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
+              ))}
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <input
+                  type="email"
+                  value={payEmail}
+                  onChange={e => setPayEmail(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSub()}
+                  placeholder={t.emailPH}
+                  style={{ flex: 1, background: th.input, border: `0.5px solid ${th.border}`, borderRadius: 6, padding: "9px 12px", color: th.text, fontSize: 13, fontFamily: SANS, outline: "none" }}
+                />
+                <button
+                  onClick={handleSub}
+                  disabled={!canSub}
+                  style={{ padding: "9px 16px", background: canSub ? CRIMSON : th.border, border: "none", borderRadius: 6, color: canSub ? "white" : th.dim, fontSize: 13, cursor: canSub ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
+                >{t.emailSubmit}</button>
+              </div>
+              <div style={{ marginTop: 10, fontSize: 11, color: th.dim, fontFamily: SANS, textAlign: "center" }}>{t.disclaimer}</div>
+            </>
+          )}
         </div>
-      </div>
-    );
+      );
+    };
 
     // ── Quiz source: medical report format ──────────────────────────────────
     if (profileData?.source === "quiz" && profileData.picks) {
@@ -1487,12 +1534,6 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       );
       return (
         <>
-        <Modal show={wxMaint} onClose={() => setWxMaint(false)} th={th}>
-          <div style={{ textAlign: "center", fontSize: 28, marginBottom: 10 }}>🔧</div>
-          <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.wxMaintTitle}</div>
-          <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.wxMaintSub}</div>
-          <button onClick={() => setWxMaint(false)} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.wxMaintBack}</button>
-        </Modal>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: `8px ${isMobile ? 8 : 20}px 8px` }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", width: "100%", maxWidth: isMobile ? undefined : 1200, margin: isMobile ? undefined : "0 auto" }}>
             {/* Report card */}
@@ -1659,12 +1700,6 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     const extraTag = [profileData?.mbti, profileData?.enn, profileData?.zodiacIdx >= 0 ? t.zodiacs[profileData.zodiacIdx] : ""].filter(Boolean).join(" · ");
     return (
       <>
-      <Modal show={wxMaint} onClose={() => setWxMaint(false)} th={th}>
-        <div style={{ textAlign: "center", fontSize: 28, marginBottom: 10 }}>🔧</div>
-        <div style={{ fontFamily: SANS, fontSize: 18, fontWeight: 700, color: th.text, marginBottom: 8, textAlign: "center" }}>{t.wxMaintTitle}</div>
-        <div style={{ fontSize: 13, color: th.dim, fontFamily: SANS, marginBottom: 24, lineHeight: 1.6, textAlign: "center" }}>{t.wxMaintSub}</div>
-        <button onClick={() => setWxMaint(false)} style={{ width: "100%", padding: "12px 0", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 7, color: th.text, fontSize: 14, cursor: "pointer", fontFamily: SANS, fontWeight: 600 }}>{t.wxMaintBack}</button>
-      </Modal>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Fixed top: profile header only */}
         <div style={{ padding: "20px 24px 16px", flexShrink: 0, background: th.bg, borderBottom: `0.5px solid ${th.border}` }}>
@@ -2687,7 +2722,7 @@ export default function App() {
         {page === "account"  && <AccountPage user={user} onLogout={handleLogout} th={th} t={t} />}
       </div>
 
-      <PaywallModal show={showPaywall} onClose={() => setShowPaywall(false)} onPay={() => { setShowPaywall(false); handlePaymentSuccess(); }} th={th} t={t} />
+      <PaywallModal show={showPaywall} onClose={() => setShowPaywall(false)} lang={lang} th={th} t={t} />
       <RegisterModal show={showRegister} onClose={() => setShowRegister(false)} onRegister={handleRegister} th={th} t={t} />
       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} onLogin={handleLogin} th={th} t={t} />
       <Analytics />

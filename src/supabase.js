@@ -22,6 +22,15 @@ export async function saveWish(content, lang) {
   });
 }
 
+export async function saveInterestEmail(email, lang) {
+  if (!supabase) return;
+  await supabase.from("interest_emails").insert({
+    email: email.trim().toLowerCase(),
+    lang: lang || "zh",
+    created_at: new Date().toISOString(),
+  });
+}
+
 export async function saveUser(info) {
   if (!supabase) return;
   await supabase.from("users").upsert({
