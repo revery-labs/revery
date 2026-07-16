@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { saveWish, saveUser, saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail } from "./supabase";
+import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail } from "./supabase";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const CRIMSON    = "#8b2252";
@@ -24,7 +24,7 @@ const mkTh = (dark) => dark ? {
 const TX = {
   zh: {
     nav:       ["测评", "蒸馏", "应用"],
-    tagline:   "把她留在这里",
+    tagline:   "恋爱脑诊断中心",
     dark: "◑", light: "☀",
     // assess
     aTitle:    "恋爱脑病例报告",
@@ -36,7 +36,7 @@ const TX = {
       { q: "你来做这份测试。本院认为这本身说明了一些问题。你来，是因为", o: ["无聊打发时间", "朋友转的（说的就是我）", "想知道自己多严重", "知道了，来拿证明"] },
     ],
     next:      "继续",
-    viewRes:   "出具病例报告", submitView: "查看报告",
+    viewRes:   "出具病例报告", submitView: "生成我的病例报告",
     resTitle:  "病例报告",
     profiles: [
       { type: "冷静理智体", desc: "你用逻辑处理情感，稳定但有时让对方感觉距离。Revery 帮你找到情绪与理性的平衡点。" },
@@ -62,11 +62,11 @@ const TX = {
     reportLBConc: "恋爱脑浓度", reportReason: "理智保留量", reportRisk: "风险等级", reportInfect: "传染性", reportPhysician: "主治医师",
     reportRiskLevels: ["低危", "中危", "高危", "极高危"],
     reportInfectLevels: ["一般", "较强", "强", "极强"],
-    reportFooter: "本报告由 Revery Labs 出具 · 仅供娱乐与自我反思参考 · 如有雷同，说明你确实病了",
+    reportFooter: "本报告由 Revery Labs 恋爱脑诊断中心出具 · 如有雷同，说明你确实病了",
     reportStamp: "已确诊",
     reportRetake: "重新确诊",
     // assess - extended
-    chooseTitle: "了解你的情感模式",
+    chooseTitle: "恋爱脑病例报告",
     chooseQuiz: "恋爱脑病例报告", chooseQuizSub: "4个问题 · 2分钟 · 免费诊断",
     chooseExisting: "我有测评结果", chooseExistingSub: "直接输入 MBTI · 九型人格 · 星座",
     mbtiLabel: "MBTI 类型", mbtiPH: "选择 MBTI",
@@ -76,7 +76,7 @@ const TX = {
     submitExisting: "生成我的画像",
     profileLabel: "你的情感档案",
     sectionTitles: ["人格底色","反差洞察","人格镜像","适配伴侣","事业发展"],
-    premCopy: "基于你是这样的人——\n你现在这段关系 / 这个困境，该怎么办？\n留下邮箱，提前解锁专属分析。",
+    premCopy: "对症下药——\n医生，我这段关系还有得「救」嘛？\n留下邮箱，药方上线第一时间喊你。",
     back: "← 返回",
     // distill
     herName:    "她叫什么",
@@ -127,137 +127,18 @@ const TX = {
     noPersona: "请先完成蒸馏",
     clearChat: "清空对话",
     typing: "对方正在输入...",
-    share: "分享", cs: "许愿池",
-    csTitle: "许愿池", csSub: "有什么功能想要？告诉我们，我们都在看。",
-    csPH: "我希望 Revery 能……", csSubmit: "许愿", csSuccess: "愿望已收到", csSuccessSub: "我们都在看，谢谢你。", csAgain: "再许一个愿",
+    share: "分享",
     shareTitle: "分享 Revery", shareCopy: "复制链接", shareCopied: "已复制！",
     regTitle: "创建账号", regSub: "解锁蒸馏与应用功能",
     regName: "昵称", regEmail: "邮箱", regPw: "密码（至少6位）", regSubmit: "完成注册",
     regPrivacy: "我同意 Revery Labs 的", regPrivacyLink: "隐私政策及个人信息共享条款",
-    paywallTitle: "提前解锁 · 限量内测", paywallSub: "留下邮箱，功能上线时第一时间通知你",
-    emailPH: "你的邮箱地址", emailSubmit: "提前解锁", emailSuccess: "已收到！", emailSuccessSub: "你将是第一批收到通知的人，感谢支持。", disclaimer: "仅供娱乐与自我反思参考",
+    paywallTitle: "对症下药", paywallSub: "医生，我还有得「救」嘛",
+    emailPH: "你的邮箱地址", emailSubmit: "排队候药", emailSuccess: "已加入候诊名单", emailSuccessSub: "药方一配好，第一时间喊你来取。", disclaimer: "仅供娱乐与自我反思参考 · 「如有雷同，说明你确实病了」",
     loginBtn: "登入", loginTitle: "欢迎回来", loginSub: "登入你的账号继续使用",
     loginEmail: "邮箱", loginPw: "密码", loginSubmit: "登入",
     loginError: "邮箱或密码不正确，请重试", loginNoAcc: "还没有账号？完成测评并付费后注册",
     acctTitle: "个人中心", acctMember: "付费会员", acctLogout: "退出登录",
     acctSection: "账号管理", acctRegDate: "会员状态",
-  },
-  en: {
-    nav:       ["Assess", "Distill", "Apply"],
-    tagline:   "Keep her here",
-    dark: "◑", light: "☀",
-    aTitle:    "Love Brain Diagnostic Report",
-    aSub:      "Free diagnosis · 2 min · consequences not included",
-    qs: [
-      { q: "He hasn't texted first all day. It's 11pm. Current status:", o: ["Didn't notice. (Sure.)", "Checked the chat. Didn't text.", "Studied his last message wording.", "Draft ready. Still unsent."] },
-      { q: "He replied 'haha.' Just that. You:", o: ["It was funny.", "Why only two letters.", "Counted his h's to others.", "Screenshot. Annotated. Filed."] },
-      { q: "He liked a stranger girl's post. Your first move:", o: ["Probably just scrolling.", "Checked who she is.", "Went through her whole page.", "Ran a full competitive audit."] },
-      { q: "You're taking this test. This clinic finds that meaningful. You're here because:", o: ["Killing time. (Sure.)", "A friend sent it. (She meant me.)", "Need to know how bad it is.", "I know. Here for the paperwork."] },
-    ],
-    next:      "Next",
-    viewRes:   "Generate Report", submitView: "View Report",
-    resTitle:  "Diagnostic Report",
-    profiles: [
-      { type: "Emotionally Stable",    desc: "You process emotions logically. Stable, but can feel distant. Revery helps you bridge head and heart." },
-      { type: "Mild Case: Observe",    desc: "You pick up signals others miss. But overthinking can turn intuition into anxiety. Revery channels sensitivity into insight." },
-      { type: "Diagnosed: Love Brain", desc: "You're willing to try but sometimes act impulsively. Revery gives data-backed clarity before you move." },
-      { type: "Critical: ICU",         desc: "You wait for clear signals, missing windows along the way. Revery reads intent so you can act with confidence." },
-    ],
-    premTitle: "Unlock Full Features",
-    premSub:   "Chat with her distilled version · Deep emotional analysis",
-    payCard:   "Pay with Card",
-    payWX:     "WeChat Pay",
-    retake:    "Retake",
-    reportCenter: "Love Brain Case Report",
-    reportSubtitle: "",
-    reportSelf: "Patient Statement",
-    reportDiag: "Clinical Diagnosis",
-    reportDoctorNote: "Attending Physician's Note",
-    reportSymptom: "Clinical Symptoms",
-    reportAnalysis: "Clinical Analysis",
-    reportSideProfile: "Patient Profile",
-    reportRx: "Prescription",
-    reportPrognosis: "Career Prognosis",
-    reportLBConc: "Love Brain Conc.", reportReason: "Reason Ret.", reportRisk: "Risk Level", reportInfect: "Contagion", reportPhysician: "Physician",
-    reportRiskLevels: ["Low", "Moderate", "High", "Critical"],
-    reportInfectLevels: ["Low", "Moderate", "High", "Extreme"],
-    reportFooter: "Issued by Revery Labs · For entertainment and self-reflection purposes only · If this is accurate, that's on you",
-    reportStamp: "CONFIRMED",
-    reportRetake: "Re-diagnose",
-    // assess - extended
-    chooseTitle: "Understand Your Emotional Patterns",
-    chooseQuiz: "Love Brain Diagnostic", chooseQuizSub: "4 questions · 2 min · Free diagnosis",
-    chooseExisting: "I have results", chooseExistingSub: "Enter MBTI · Enneagram · Zodiac",
-    mbtiLabel: "MBTI Type", mbtiPH: "Select MBTI",
-    ennLabel: "Enneagram", ennPH: "Select Enneagram",
-    zodLabel: "Zodiac",
-    zodiacs: ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"],
-    submitExisting: "Build My Profile",
-    profileLabel: "Your Emotional Profile",
-    sectionTitles: ["Core Nature","Hidden Contrast","Personality Mirror","Ideal Partner","Career Path"],
-    premCopy: "Based on who you are —\nhow should you handle this relationship / this situation?\nDrop your email to unlock your personalized analysis.",
-    back: "← Back",
-    herName:    "Her name",
-    herNamePH:  "A name, or a nickname only you know",
-    herAvatar:  "Photo",
-    myAvatar:   "My photo",
-    meLabel:    "Me",
-    uploadPh:   "+ Upload Photo",
-    zodPH:      "Select Zodiac",
-    clLabel:    "Chat logs",
-    clHint:     "Exported text works best",
-    clApps:     "WeChat / Instagram / iMessage / WhatsApp / LINE",
-    clFormats:  ".txt  /  .json  /  .csv  /  .html",
-    dropHint:   "Drop files here, or click to select",
-    localHint:  "All data processed locally, never uploaded",
-    exportGuideQ: "How to export chat logs?",
-    exportGuide: [
-      { label: "WeChat (Mac)", steps: ["WeChat → bottom-left avatar → Backup & Restore → Backup to Computer", "Download WeChatMsg (search GitHub for WeChatMsg)", "Use WeChatMsg to export the backup as .txt"] },
-      { label: "WeChat (Windows)", steps: ["Download WeChatMsg (search GitHub for WeChatMsg)", "Follow the tool's guide to export chat logs as .txt"] },
-      { label: "WeChat (Mobile)", steps: ["Open conversation → ··· top-right → Chat History → Export", "Choose export as file, send to your computer"] },
-      { label: "WhatsApp", steps: ["Open conversation → ··· top-right → More → Export Chat", "Choose 'Without Media', save as .txt"] },
-      { label: "iMessage (Mac)", steps: ["Open Messages app → select conversation", "File → Export as PDF, or select all → copy → paste into a .txt file"] },
-      { label: "Instagram / LINE / Other", steps: ["Screenshot or copy chat content, paste into a .txt file and upload"] },
-    ],
-    dHer:       "Distill Her",
-    dMe:        "Distill Me",
-    phases:     ["Parsing language patterns...", "Extracting emotional traits...", "Rebuilding memory fragments..."],
-    histBtn:    "History",
-    histTitle:  "History",
-    histEmpty:  "No history yet",
-    histView:   "View",
-    histDelete: "Delete",
-    targetHer:  "Her",
-    targetMe:   "Me",
-    analyze:   "Analyze",
-    chat:      "Chat",
-    redistill: "Redistill",
-    saveQ:     "Save current conversation?",
-    saveY:     "Save",
-    saveN:     "Don't Save",
-    pastePH:   "Paste content to analyze...",
-    analyzeBtn:"Analyze",
-    chatPH:    "Say something...",
-    analyzing: "Analyzing...",
-    analyzeFollowPH: "Ask a follow-up about the analysis...",
-    clearAnalyze: "Clear",
-    noPersona: "Please complete distillation first",
-    clearChat: "Clear Chat",
-    typing: "Typing...",
-    share: "Share", cs: "Wish List",
-    csTitle: "Wish List", csSub: "Got a feature idea? Drop it in. We read everything.",
-    csPH: "I wish Revery could…", csSubmit: "Wish", csSuccess: "Wish received", csSuccessSub: "We're reading. Thank you.", csAgain: "Make another wish",
-    shareTitle: "Share Revery", shareCopy: "Copy Link", shareCopied: "Copied!",
-    regTitle: "Create Account", regSub: "Unlock Distill & Apply",
-    regName: "Name", regEmail: "Email", regPw: "Password (6+ chars)", regSubmit: "Create Account",
-    regPrivacy: "I agree to Revery Labs'", regPrivacyLink: "Privacy Policy and Data Sharing Terms",
-    paywallTitle: "Early Access", paywallSub: "Drop your email — we'll notify you when it goes live",
-    emailPH: "your@email.com", emailSubmit: "Unlock Early", emailSuccess: "You're in!", emailSuccessSub: "You'll be among the first to know when it launches. Thanks!", disclaimer: "For entertainment and self-reflection purposes only",
-    loginBtn: "Sign in", loginTitle: "Welcome back", loginSub: "Sign in to your account",
-    loginEmail: "Email", loginPw: "Password", loginSubmit: "Sign in",
-    loginError: "Incorrect email or password", loginNoAcc: "No account? Complete assessment and pay to register",
-    acctTitle: "Account", acctMember: "Paid Member", acctLogout: "Sign out",
-    acctSection: "Account", acctRegDate: "Membership",
   },
 };
 
@@ -391,14 +272,6 @@ const ShareIcon = () => (
     <line x1="12" y1="2" x2="12" y2="15"/>
   </svg>
 );
-const WishIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
-    <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
-    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/>
-    <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
-  </svg>
-);
-
 // ─── PAYWALL MODAL ────────────────────────────────────────────────────────────
 function PaywallModal({ show, onClose, lang, th, t }) {
   const [email, setEmail] = useState("");
@@ -436,7 +309,6 @@ function PaywallModal({ show, onClose, lang, th, t }) {
             disabled={!canSubmit}
             style={{ width: "100%", padding: "12px 0", background: canSubmit ? CRIMSON : th.border, border: "none", borderRadius: 7, color: canSubmit ? "white" : th.dim, fontSize: 14, cursor: canSubmit ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, transition: "background 0.2s" }}
           >{t.emailSubmit}</button>
-          <div style={{ marginTop: 14, fontSize: 11, color: th.dim, fontFamily: SANS, textAlign: "center" }}>{t.disclaimer}</div>
         </>
       )}
     </Modal>
@@ -527,21 +399,13 @@ We may update this privacy policy from time to time. Significant changes will be
 };
 
 function PrivacyModal({ show, onClose, th }) {
-  const [lang, setLang] = useState("zh");
   if (!show) return null;
-  const lines = PRIVACY[lang].split("\n");
+  const lines = PRIVACY.zh.split("\n");
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: th.surface, border: `0.5px solid ${th.border}`, borderRadius: 14, padding: "28px 28px 24px", maxWidth: 480, width: "92%", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexShrink: 0 }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            {["zh", "en"].map((l) => (
-              <button key={l} onClick={() => setLang(l)} style={{ padding: "4px 12px", border: `0.5px solid ${lang === l ? CRIMSON : th.border}`, borderRadius: 20, background: lang === l ? CRIMSON : "transparent", color: lang === l ? "white" : th.dim, fontSize: 12, fontFamily: SANS, cursor: "pointer" }}>
-                {l === "zh" ? "中文" : "EN"}
-              </button>
-            ))}
-          </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 16, flexShrink: 0 }}>
           <button onClick={onClose} style={{ background: "none", border: "none", color: th.dim, fontSize: 20, cursor: "pointer", lineHeight: 1, padding: "0 4px" }}>×</button>
         </div>
         {/* Content */}
@@ -761,12 +625,9 @@ function useIsMobile() {
 }
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
-function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid, persona, onPaywall, user, onLogin, onAccount }) {
+function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona, onPaywall, user, onLogin, onAccount }) {
   const [showShare, setShowShare] = useState(false);
-  const [showCS,    setShowCS]    = useState(false);
   const [copied,    setCopied]    = useState(false);
-  const [wishText,  setWishText]  = useState("");
-  const [wishSent,  setWishSent]  = useState(false);
   const isMobile = useIsMobile();
 
   const navOpts = t.nav.map((l, i) => ({ v: ["assess", "distill", "app"][i], l }));
@@ -790,22 +651,14 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
     const userInitial = (user?.name || user?.email || "")[0]?.toUpperCase();
     return (
       <>
-        <IconBtn onClick={() => setLang((l) => (l === "zh" ? "en" : "zh"))} th={th} font={SANS} style={{ ...s, minWidth: 42 }}>
-          {lang === "zh" ? "EN" : "中"}
-        </IconBtn>
         <IconBtn onClick={() => setDark((d) => !d)} th={th} font={SANS} style={{ ...s, fontSize: compact ? 15 : 18, paddingBottom: compact ? 1 : 3 }}>
           {dark ? t.light : t.dark}
         </IconBtn>
-        <IconBtn onClick={() => setShowCS(true)} th={th} font={SANS} style={s}><WishIcon /></IconBtn>
         <IconBtn onClick={handleShare} th={th} font={SANS} style={s}>{copied ? "✓" : <ShareIcon />}</IconBtn>
-        {user ? (
+        {user && (
           <button onClick={onAccount} style={{ width: compact ? 30 : 34, height: compact ? 30 : 34, borderRadius: "50%", background: CRIMSON, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <span style={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: "white", fontFamily: SANS }}>{userInitial}</span>
           </button>
-        ) : (
-          <IconBtn onClick={onLogin} th={th} font={SANS} style={{ ...s, minWidth: 42, fontSize: compact ? 11 : 12 }}>
-            {t.loginBtn}
-          </IconBtn>
         )}
       </>
     );
@@ -821,17 +674,11 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
               <img src="/logo.png" alt="" style={{ height: 48, width: "auto", display: "block" }} />
               <div style={{ fontSize: 20, lineHeight: 1 }}>
                 <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
-                <span style={{ fontFamily: "Arial, 'Helvetica Neue', sans-serif", color: th.mid, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", marginLeft: 6 }}>LABS</span>
+                <span style={{ fontFamily: SERIF_LOGO, color: th.mid, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 5 }}>LABS</span>
               </div>
             </div>
             <div style={{ flex: 1 }} />
             <div style={{ display: "flex", gap: 6 }}>{iconBtns(true)}</div>
-          </div>
-          {/* Row 2: nav */}
-          <div style={{ display: "flex", justifyContent: "center", padding: "6px 14px 10px" }}>
-            <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont} sm
-              disabledVals={disabledVals}
-            />
           </div>
         </div>
       ) : (
@@ -842,17 +689,12 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
             <div>
               <div style={{ fontSize: 26, lineHeight: 1 }}>
                 <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
-                <span style={{ fontFamily: "Arial, 'Helvetica Neue', sans-serif", color: th.mid, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", marginLeft: 8 }}>LABS</span>
+                <span style={{ fontFamily: SERIF_LOGO, color: th.mid, fontSize: 16, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 7 }}>LABS</span>
               </div>
               <div style={{ fontSize: 12, color: th.text, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
             </div>
           </div>
           <div style={{ flex: 1 }} />
-          <div style={{ flexShrink: 0 }}>
-            <Seg opts={navOpts} val={page} onChange={onNavChange} th={th} font={mFont}
-              disabledVals={disabledVals}
-            />
-          </div>
           <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>{iconBtns(false)}</div>
         </div>
       )}
@@ -865,37 +707,6 @@ function Header({ page, onNavChange, dark, setDark, lang, setLang, th, t, isPaid
         </button>
       </Modal>
 
-      {/* Wish modal */}
-      <Modal show={showCS} onClose={() => { setShowCS(false); setTimeout(() => { setWishText(""); setWishSent(false); }, 300); }} th={th}>
-        <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 700, color: th.text, marginBottom: 4 }}>{t.csTitle}</div>
-        <div style={{ fontSize: 13, color: th.mid, fontFamily: SANS, marginBottom: 18, lineHeight: 1.5 }}>{t.csSub}</div>
-        {wishSent ? (
-          <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>🪔</div>
-            <div style={{ fontFamily: SANS, fontSize: 16, fontWeight: 700, color: th.text, marginBottom: 6 }}>{t.csSuccess}</div>
-            <div style={{ fontFamily: SANS, fontSize: 13, color: th.mid, marginBottom: 20 }}>{t.csSuccessSub}</div>
-            <button onClick={() => { setWishText(""); setWishSent(false); }} style={{ background: "none", border: `1px solid ${th.border}`, borderRadius: 8, padding: "8px 18px", fontFamily: SANS, fontSize: 13, color: th.mid, cursor: "pointer" }}>{t.csAgain}</button>
-          </div>
-        ) : (
-          <>
-            <textarea
-              value={wishText}
-              onChange={e => setWishText(e.target.value.slice(0, 200))}
-              placeholder={t.csPH}
-              rows={4}
-              style={{ width: "100%", boxSizing: "border-box", fontFamily: SANS, fontSize: 14, color: th.text, background: th.card, border: `1px solid ${th.border}`, borderRadius: 10, padding: "12px 14px", resize: "none", outline: "none", lineHeight: 1.6 }}
-            />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-              <span style={{ fontSize: 11, color: th.dim, fontFamily: MONO }}>{wishText.length}/200</span>
-              <button
-                onClick={() => { if (wishText.trim()) { setWishSent(true); saveWish(wishText.trim(), lang); } }}
-                disabled={!wishText.trim()}
-                style={{ background: wishText.trim() ? CRIMSON : th.border, color: wishText.trim() ? "white" : th.dim, border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: SANS, fontSize: 14, fontWeight: 600, cursor: wishText.trim() ? "pointer" : "default", transition: "background 0.2s" }}
-              >{t.csSubmit}</button>
-            </div>
-          </>
-        )}
-      </Modal>
     </>
   );
 }
@@ -1145,7 +956,103 @@ function buildQuizProfile(picks, lang) {
   };
 }
 
+// ─── CROSS-FUSION PROFILES ────────────────────────────────────────────────────
+// Key: "${MBTI}_${parseInt(enn)}_${zodiacIdx}"
+// 8 hand-crafted archetypes as few-shot seeds. Add more as generated.
+// zodiacIdx: 0白羊 1金牛 2双子 3巨蟹 4狮子 5处女 6天秤 7天蝎 8射手 9摩羯 10水瓶 11双鱼
+const CROSS_PROFILES = {
+  zh: {
+    "INFJ_4_7": {
+      name: "灵魂外科医",
+      tagline: "你比谁都清楚问题出在哪，但你等着对方自己看见",
+      core: "你对人的感知精准得有点可怕——你能在对方还没意识到的时候，就已经知道这段关系的走向。INFJ 的洞见、4号对本质的执着、天蝎对深度的渴望，合在一起变成一种几乎超自然的读人能力。问题是，你看得太清楚了，有时候反而不知道该怎么办。",
+      contrast: "你表面上是那个安静听别人说话的人，但内部一直在做解析。你不是没有判断，是你把判断藏得太深——等你说出来的时候，对方已经不在那个位置了。",
+      mirror: "你在感情里是最难被真正看见的类型。你给出深度，但你对「我是否被理解」极度敏感，稍微感到被曲解就会收回去。对方很难追上你的节奏——不是因为你太快，是因为你的频道根本就不公开直播。",
+      partner: "你需要一个不需要解释就能感应到你在想什么的人。不是心灵感应，是一种对你这个人的长期的、认真的关注——他们记住你说过的每一句话，因为他们真的在听。",
+      career: "你的核心优势是穿透力——你能比任何人都更快看清楚一件事真正的问题在哪里。咨询、心理、深度内容创作、任何需要精准洞察的领域，都会用上这个能力。",
+    },
+    "ENTP_7_2": {
+      name: "清醒混沌者",
+      tagline: "你在三十秒内说服了自己，然后用三十分钟推翻它",
+      core: "你的大脑是一台加速运转的矛盾机器——ENTP 的辩证思维、7号对刺激的追逐、双子对多重性的享受，叠在一起，让你对任何结论都保持一种戏谑性的距离。你不是不认真，是你把「保持开放」当成了一种保护机制。",
+      contrast: "你最聪明的地方就是你最容易受伤的地方——你用智识和玩笑来保持距离，但你真正在乎某个人的时候，一句话就能击穿你。只是没有人见过那个被击穿的你，因为你会在五秒钟内重新站起来，说一个更有趣的话来转移话题。",
+      mirror: "你在感情里的天花板是：「我愿意为你停下来」。不是停下别的事，是停下你那台一直在跑的引擎——真的等一等，听对方说完，不急着分析，不急着把它变成一个有趣的观察。做到这一点的时候，你会让人感觉被全世界最聪明的人认真对待。",
+      partner: "你需要一个不会被你的速度甩开、同时不会想要慢下来你的人。他们不是来追你的，而是跑在旁边的，偶尔还能给你一个你没想到的角度。",
+      career: "你最厉害的场合是一个没有固定答案的问题——创业、战略、创意、辩论、跨界。你不适合重复性的工作，你适合一切需要「从零想起」的事。",
+    },
+    "INFP_9_11": {
+      name: "清醒梦游者",
+      tagline: "你活在一个比现实更真实的地方，问题是只有你能进去",
+      core: "你有一个极其丰富的内心世界——不是比喻意义上的，是字面意义上的。INFP 的价值驱动、9号对和谐的渴望、双鱼对边界的模糊，让你有时候比别人慢半拍进入现实，但一旦你进来，你带来的东西是其他人根本带不来的。",
+      contrast: "你不是没有立场，你是把立场藏在深处，只在感觉完全安全的时候才拿出来。你害怕冲突，但你比任何人都清楚自己在乎什么——你只是需要一个能让你把那个声音说出口的人，而不是一个空间让你继续保持安静。",
+      mirror: "你在感情里是那个绝对不会先开口表白的人——不是因为你不在乎，而是因为你对「万一不是」的恐惧比任何人都强。你宁可在一个模糊的可能性里待很久，也不愿意踏出去然后发现自己理解错了。",
+      partner: "你需要一个能够主动进入你那个内心世界的人——不是等你邀请，而是他们自然地走到了门口，你意识到门已经开了。那种人不催你，不解释你，就是真的好奇你在想什么，而且他们问出来的问题让你觉得：这个人看见我了。",
+      career: "你的核心资产是共情深度和语言敏感度——文字、艺术、心理、教育，任何需要「真的感受过」才能做好的事，你能做到别人做不到的层次。",
+    },
+    "INTJ_5_9": {
+      name: "冷静筑墙人",
+      tagline: "你把「不需要任何人」练到了真信，这才是问题所在",
+      core: "你是独立的顶点——INTJ 的战略自给、5号对资源的囤积和对依赖的恐惧、摩羯对自我控制的执念，三个系统叠在一起，让你构建出了一套铁板一块的独立人格。这套系统运转非常高效，直到它遇到一种特定情况：你真的喜欢上了某个人。",
+      contrast: "你分析问题的能力延伸到了自己的感情里——你能精确描述一段关系的所有变量，却在唯一不能量化的那个地方卡住了。那个卡住的地方叫「我到底要不要让这个人进来」。",
+      mirror: "你在感情里最容易被误读的是「冷漠」。你不是冷漠，是你给出去的关心是通过行动、通过解决问题、通过「我记住了你上次说的那件事」来表达的，不是通过说「我很在意你」。问题是，很多人不会读那种语言。",
+      partner: "你需要的人能够接住你用行动表达的情感，而不是要求你换一种语言。同时，他们要有足够的自我，不会在你的独立气场下消失——你尊重有自己世界的人，你不知道怎么对待一直需要你的人。",
+      career: "长线、复杂、需要大量独立判断的赛道——战略咨询、系统架构、独立研究、创业。你不是不能合作，你是只愿意和你真正尊重的人合作。",
+    },
+    "ENFP_2_4": {
+      name: "过度点亮者",
+      tagline: "你给出的热情是真的，你只是忘了给自己留一份",
+      core: "你是房间里最温暖的那个人——ENFP 的热情和对可能性的感知、2号对他人需求的精准感应、狮子对存在感的渴望，合在一起，让你在人际关系里几乎无敌。你会让每一个人感觉自己被特别对待，因为你说的是真的。问题是这个「真的」消耗非常大，你自己很少发现什么时候电已经快没了。",
+      contrast: "你帮助别人的冲动有一部分来自真心，有一部分来自一种很深的恐惧：如果我不有用，我是否还值得被留下来。这个恐惧你几乎不会说出来，因为你的外在形象和这个内核差太多了——没有人会相信那个发光发热的你，有这种恐惧。",
+      mirror: "你在感情里给得非常多，但你要的东西也很具体——你要被看见，真实地被看见，不是被你点亮之后那个光的映射，而是当你安静下来、不再是「大家的 ENFP」的时候，还有人在。",
+      partner: "你需要一个能接住你安静状态的人。不是让你一直发光，而是在你不发光的时候也在旁边。而且他们要敢直接告诉你：你够了，你不需要再多做什么。",
+      career: "你的天赋是让人感觉被激活——公关、品牌、教育、社群、创意。你最厉害的时候是当你自己也真的被项目点燃的时候，因为那时候你的热情是没有天花板的。",
+    },
+    "ISTJ_1_5": {
+      name: "完美巡逻者",
+      tagline: "你替所有人把标准守住了，但没有人告诉你你也可以放下来",
+      core: "你是这个系统里最可靠的人——ISTJ 的责任感和对结构的信任、1号对正确性的执着、处女座对细节的敏感，三者交叠出来的人格，让你成为任何关系或团队里事实上的「兜底者」。你不抱怨，你做。这是你的力量，也是你的代价。",
+      contrast: "你有一个非常高的内部标准，而且你对自己用的比对别人用的更严格。你批评自己的频率远超你批评别人的频率——你只是不说出来，因为说出来「不专业」、「太软弱」、「应该直接解决而不是抱怨」。",
+      mirror: "你在感情里最容易做的事是：把「好好照顾对方」变成「好好执行一段关系的所有正确步骤」。你会记纪念日，你会安排好一切，你会提前想到对方可能需要什么——但这些都是从系统层面管理关系，而不是从情感层面接触对方。",
+      partner: "你需要一个敢来打破你程序的人——不是破坏你，是带你进入一个你没有预设程序的情境，让你发现：原来关系里有一些不可控的东西，不仅不危险，而且很好。",
+      career: "执行力、精准度、长期稳定性——运营、法务、财务、项目管理、任何需要「把事情真正做对」的领域。你是你所在团队里最后一道质量关，而且这道关从来不会松。",
+    },
+    "INTP_5_8": {
+      name: "哲学逃跑者",
+      tagline: "你把想清楚当成了不开口的理由",
+      core: "你有一种罕见的能力：在任何情境下都能保持一种分析性的距离。INTP 的系统拆解、5号对知识作为安全感的依赖、射手的哲学漫游，三者交叉出来的你，能在极近的距离里保持极大的心理空间——这让你能看清很多人看不清的事，但同样让你很难「真的进去」。",
+      contrast: "你表面上随遇而安，但你内部有一套非常精密的信念系统——关于什么是值得的、什么是浪费时间的、什么样的人是可以深交的。这套系统不是随机的，是你花了很多年建立的，而且你不会轻易让别人看见它，因为一旦被看见，就意味着你在乎别人怎么看它。",
+      mirror: "你在感情里的问题不是不想靠近，是你有一个内建的「还不够了解」的门槛——你总是觉得自己需要再多想一想、再观察一段时间，再确认一下。等你觉得想清楚了，对方可能已经等太久了。",
+      partner: "你需要一个禁得住你的沉默的人——不是用沉默来逃避，而是一种共处的状态，两个人都有自己的世界，偶尔对视一下，不需要填满所有空间。同时，他们要偶尔拉着你走出去，走到你的思维到不了的地方。",
+      career: "研究、哲学、系统设计、学术、独立写作——任何需要「从头想清楚」而不是「照着模板做」的事，都是你的领地。你最好的工作成果，往往来自你被一个问题真正勾住之后的那段时间。",
+    },
+    "ESFP_7_0": {
+      name: "即兴燃烧者",
+      tagline: "你不是冲动，你只是活在别人还没反应过来的那一秒",
+      core: "你的时区是「现在」——ESFP 对当下感官体验的投入、7号对痛苦的绕行和对兴奋的追逐、白羊对行动的本能，合在一起，让你成为任何房间里最先动起来的人。你不是冲动，是你的信号传导速度和执行之间几乎没有延迟，而大多数人的延迟叫「想太多」。",
+      contrast: "你被最多人误解的一点是：你在乎的东西其实非常深。你对某些人、某些时刻的忠诚，比任何人想象得都要强——你只是不喜欢用「我在乎你」这种句子，你用的是「我出现了」「我记住了」「我又来了」。",
+      mirror: "你在感情里是最全情投入又最容易被当成「玩玩而已」的类型。不是你轻浮，是你的热情浓度太高，反而让人觉得这种热情不可能是认真的。你需要一个能区分你的普通热情和你对他专属热情的人。",
+      partner: "你需要一个不会试图管理你能量的人——不是放任你，是跟着你，偶尔在你冲过头的时候在旁边等你回来。他们不会因为你今天热情明天安静就觉得你不稳定，因为他们知道两个你都是真的。",
+      career: "表演、体育、现场、销售、创业——任何需要当下判断和即时能量的领域。你不适合长期的案头工作，你适合一切让你和真实的人真实互动的事。",
+    },
+    "ENFJ_3_6": {
+      name: "镜面设计师",
+      tagline: "你把每一段关系都调到了最好的频率，唯独没有调自己的",
+      core: "你是人际关系的天才——ENFJ 对他人情绪的感知和引导能力、3号对成功和形象的构建、天秤对和谐的极致追求，让你几乎能在任何关系里找到最优的相处方式。你天然知道对方需要什么，然后给出来。这是天赋，也是一种你不自觉完成的消耗。",
+      contrast: "你最难做到的事，是在另一个人面前展示你没有经过设计的部分——那个烦躁的、不确定的、不知道该怎么办的你。你太擅长「把自己调成对方需要的样子」，有时候连你自己都不确定那个没有被调过的版本是什么样的。",
+      mirror: "你在感情里是一个极其温柔的人，但你的温柔有一个隐藏条件——你需要感觉自己在对方眼里是重要的、是有价值的、是「他选了我因为我是我」。一旦你开始怀疑这一点，你的整个系统就会静悄悄地开始撤退。",
+      partner: "你需要一个主动让你「不需要表现」的人——他们不需要你在状态最好的时候，他们选的是你全部，包括你最不优雅的那个下午。",
+      career: "领导力、公关、教育、品牌、任何需要带人的事——你最厉害的能力是让别人发挥出自己最好的状态。给你一个团队，你能让每个人都觉得自己很重要，然后他们真的会变得很重要。",
+    },
+  },
+};
+
 function buildExistingProfile(mbti, enn, zodiacIdx, lang) {
+  // Check hand-crafted cross-fusion profile first (zh only for now)
+  if (lang === "zh") {
+    const crossKey = `${mbti}_${parseInt(enn) || 0}_${zodiacIdx}`;
+    const cross = CROSS_PROFILES.zh[crossKey];
+    if (cross) return cross;
+  }
   const MC = MBTI_CONTENT[lang] ?? MBTI_CONTENT.zh;
   const EC = ENN_CONTENT[lang]  ?? ENN_CONTENT.zh;
   const ZC = ZOD_CONTENT[lang]  ?? ZOD_CONTENT.zh;
@@ -1171,6 +1078,20 @@ function buildExistingProfile(mbti, enn, zodiacIdx, lang) {
     partner:  e?.partner  ?? m?.partner  ?? z?.partner  ?? "",
     career:   m?.career   ?? e?.career   ?? z?.career   ?? "",
   };
+}
+
+function deriveScores(mbti, ennStr, zodiacIdx) {
+  const f  = mbti?.includes("F") ?? false;
+  const ii = mbti?.includes("I") ?? false;
+  const n  = mbti?.includes("N") ?? false;
+  const p  = mbti?.includes("P") ?? false;
+  const ennNum = parseInt(ennStr) || 0;
+  const water  = [3, 7, 11].includes(zodiacIdx);
+  const rawLb = 40 + (f ? 15 : 0) + (ii ? 5 : 0) + (n ? 5 : 0) + (p ? 8 : 0)
+              + ([2,4,6,9].includes(ennNum) ? 8 : 0) - ([1,3,5,8].includes(ennNum) ? 5 : 0)
+              + (water ? 5 : 0);
+  const lbPct = Math.min(90, Math.max(28, rawLb));
+  return { lbPct, reasonPct: 100 - lbPct };
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -1406,28 +1327,24 @@ const PROFILES_UNUSED = { zh: [
 };
 
 // ─── ASSESS PAGE ──────────────────────────────────────────────────────────────
-// NOTE: PROFILES_UNUSED above is a legacy stub — buildQuizProfile/buildExistingProfile replace it
 function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const SAVED_KEY = "revery_profile_v2";
   const mFont = lang === "en" ? SANS : MONO;
   const isMobile = useIsMobile();
-  const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVED_KEY)); } catch { return null; } };
+  const loadSaved = () => { try { const d = JSON.parse(localStorage.getItem(SAVED_KEY)); return d?.source === "existing" ? d : null; } catch { return null; } };
 
   const [savedData]   = useState(loadSaved);
-  const [screen,      setScreen]     = useState(savedData?.source ? "result" : "choose");
+  const [screen,      setScreen]     = useState(savedData ? "result" : "input");
   const [payEmail,    setPayEmail]   = useState("");
   const [payEmailSent, setPayEmailSent] = useState(false);
-  const [picks,       setPicks]      = useState(Array(4).fill(null));
   const [mbti,        setMbti]       = useState("");
   const [enneagram,   setEnneagram]  = useState("");
   const [zodiacIdx,   setZodiacIdx]  = useState(-1);
-  const [profileData, setProfileData] = useState(savedData?.source ? savedData : null);
+  const [profileData, setProfileData] = useState(savedData || null);
 
   const getProfile = (pd, lg) => {
     if (!pd) return null;
-    if (pd.source === "quiz" && pd.picks) return buildQuizProfile(pd.picks, lg);
-    if (pd.source === "existing") return buildExistingProfile(pd.mbti || "", pd.enn || "", pd.zodiacIdx ?? -1, lg);
-    return null;
+    return buildExistingProfile(pd.mbti || "", pd.enn || "", pd.zodiacIdx ?? -1, lg);
   };
   const profile = getProfile(profileData, lang);
 
@@ -1439,16 +1356,12 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   const retake = () => {
     localStorage.removeItem(SAVED_KEY);
-    setScreen("choose");
+    setScreen("input");
     setProfileData(null);
-    setPicks(Array(4).fill(null));
     setMbti("");
     setEnneagram("");
     setZodiacIdx(-1);
   };
-
-  const finishQuiz = (finalPicks) =>
-    saveAndShow({ source: "quiz", picks: finalPicks });
 
   const submitExisting = () =>
     saveAndShow({ source: "existing", mbti: mbti.trim().toUpperCase(), enn: enneagram.trim(), zodiacIdx });
@@ -1475,304 +1388,132 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                 <p key={i} style={{ fontSize: i === 0 ? 14 : 12, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? th.text : th.mid, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
               ))}
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <input
-                  type="email"
-                  value={payEmail}
-                  onChange={e => setPayEmail(e.target.value)}
+                <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSub()}
                   placeholder={t.emailPH}
                   style={{ flex: 1, background: th.input, border: `0.5px solid ${th.border}`, borderRadius: 6, padding: "9px 12px", color: th.text, fontSize: 13, fontFamily: SANS, outline: "none" }}
                 />
-                <button
-                  onClick={handleSub}
-                  disabled={!canSub}
+                <button onClick={handleSub} disabled={!canSub}
                   style={{ padding: "9px 16px", background: canSub ? CRIMSON : th.border, border: "none", borderRadius: 6, color: canSub ? "white" : th.dim, fontSize: 13, cursor: canSub ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
                 >{t.emailSubmit}</button>
               </div>
-              <div style={{ marginTop: 10, fontSize: 11, color: th.dim, fontFamily: SANS, textAlign: "center" }}>{t.disclaimer}</div>
             </>
           )}
         </div>
       );
     };
 
-    // ── Quiz source: medical report format ──────────────────────────────────
-    if (profileData?.source === "quiz" && profileData.picks) {
-      const picks = profileData.picks;
-      const QC = (lang === "en" ? QUIZ_CONTENT.en : QUIZ_CONTENT.zh);
-      const caseNo = `LBDC-${new Date().getFullYear()}-${String(picks[0]*64+picks[1]*16+picks[2]*4+picks[3]).padStart(3,"0")}`;
-      const today = new Date().toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { year:"numeric", month:"long", day:"numeric" });
-      const doctorNote = QC.doctorNote[picks[0]];
-      const totalScore = picks[0]*3 + picks[1]*2 + picks[2]*2 + picks[3];
-      const lbPct = 28 + Math.round((totalScore / 24) * 62);
-      const reasonPct = 100 - lbPct;
-      const riskIdx = Math.min(3, Math.floor((picks[0] + picks[2]) / 2));
-      const infectIdx = picks[3];
-      // radar chart
-      const radarCx = 60, radarCy = 65, radarR = 50, radarN = 5;
-      const radarVals = [
-        Math.max(0.12, picks[0] / 3),
-        Math.max(0.12, picks[1] / 3),
-        Math.max(0.12, picks[2] / 3),
-        Math.max(0.12, picks[3] / 3),
-        Math.max(0.12, lbPct / 90),
-      ];
-      const radarLabels = lang === "zh"
-        ? ["执着", "解读", "监测", "动机", "风险"]
-        : ["Attach", "Decode", "Track", "Motive", "Risk"];
-      const radarPt = (i, scale) => {
-        const a = -Math.PI / 2 + i * (2 * Math.PI / radarN);
-        return [radarCx + radarR * scale * Math.cos(a), radarCy + radarR * scale * Math.sin(a)];
-      };
-      const radarGrid = (scale) => Array.from({ length: radarN }, (_, i) => radarPt(i, scale).join(",")).join(" ");
-      const radarData = radarVals.map((v, i) => radarPt(i, v).join(",")).join(" ");
-      const Row = ({ label, children, accent, grow = 1 }) => (
-        <div style={{ borderTop: `0.5px solid ${th.border}`, padding: isMobile ? "8px 12px" : "8px 16px", flex: isMobile ? "none" : grow, display: "flex", flexDirection: "column", overflow: "visible" }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: CRIMSON, fontWeight: 700, fontFamily: MONO, marginBottom: 4, textTransform: "uppercase", flexShrink: 0 }}>{label}</div>
-          {children}
-        </div>
-      );
-      return (
-        <>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: `8px ${isMobile ? 8 : 20}px 8px` }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", width: "100%", maxWidth: isMobile ? undefined : 1200, margin: isMobile ? undefined : "0 auto" }}>
-            {/* Report card */}
-            <div style={{ flex: isMobile ? "none" : 1, border: `1px solid ${th.border}`, borderRadius: 10, overflow: "visible", background: th.surface, display: "flex", flexDirection: "column" }}>
-              {/* Header */}
-              <div style={{ background: CRIMSON, padding: "9px 18px", textAlign: "center", flexShrink: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "white", fontFamily: SANS, letterSpacing: "0.04em" }}>{t.reportCenter}</div>
-              </div>
-              {/* Case info */}
-              <div style={{ padding: "4px 18px", background: th.card, display: "flex", justifyContent: "space-between", flexShrink: 0, borderBottom: `0.5px solid ${th.border}` }}>
-                <div style={{ fontSize: 9, color: th.dim, fontFamily: MONO }}>{caseNo}</div>
-                <div style={{ fontSize: 9, color: th.dim, fontFamily: MONO }}>{today}</div>
-              </div>
-              {/* Vital stats */}
-              <div style={{ padding: "5px 18px", background: th.card, borderBottom: `0.5px solid ${th.border}`, flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <div style={{ fontSize: 7.5, color: th.dim, fontFamily: MONO, letterSpacing: "0.10em", whiteSpace: "nowrap" }}>{t.reportLBConc}</div>
-                  <div style={{ flex: 1, height: 4, background: th.border, borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ width: `${lbPct}%`, height: "100%", background: CRIMSON }} />
-                  </div>
-                  <div style={{ fontSize: 12, fontFamily: MONO, color: CRIMSON, fontWeight: 700 }}>{lbPct}%</div>
-                </div>
-                <div style={{ display: "flex", flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                  {[
-                    { label: t.reportReason, val: `${reasonPct}%`, color: th.text },
-                    { label: t.reportRisk, val: t.reportRiskLevels[riskIdx], color: CRIMSON },
-                    { label: t.reportInfect, val: t.reportInfectLevels[infectIdx], color: th.text },
-                    { label: t.reportPhysician, val: "Dr. R. Labs", color: th.mid },
-                  ].map(({ label, val, color }, i) => (
-                    <div key={i} style={{ flex: isMobile ? "0 0 50%" : 1, borderLeft: (!isMobile && i > 0) ? `0.5px solid ${th.border}` : "none", paddingLeft: (!isMobile && i > 0) ? 10 : 0, marginTop: isMobile && i >= 2 ? 4 : 0 }}>
-                      <div style={{ fontSize: 7, color: th.dim, fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 1 }}>{label}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: MONO }}>{val}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Body: two-column on desktop, single-column on mobile */}
-              <div style={{ flex: isMobile ? "none" : 1, display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "visible" }}>
-                {/* Left column */}
-                <div style={{ flex: isMobile ? "none" : "0 0 38%", display: "flex", flexDirection: "column", borderRight: isMobile ? "none" : `0.5px solid ${th.border}`, borderBottom: isMobile ? `0.5px solid ${th.border}` : "none" }}>
-                  <Row label={t.reportDiag} accent grow={0.65}>
-                    <div style={{ position: "relative" }}>
-                      <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: CRIMSON, fontFamily: SANS, lineHeight: 1.1, marginBottom: 4, paddingRight: 44 }}>{profile.name}</div>
-                      <div style={{ position: "absolute", top: 0, right: 0, border: `2px solid ${CRIMSON}`, borderRadius: 4, padding: "5px 10px", transform: "rotate(12deg)", opacity: 0.6 }}>
-                        <span style={{ fontSize: 13, fontFamily: MONO, color: CRIMSON, fontWeight: 700, letterSpacing: "0.14em" }}>{t.reportStamp}</span>
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 13, color: th.mid, fontFamily: SANS, lineHeight: 1.4 }}>{profile.tagline}</div>
-                  </Row>
-                  <Row label={lang === "zh" ? "情绪雷达" : "Psych Radar"} grow={1.8}>
-                    {(() => {
-                      const levelZh = [["稳定","波动","显著","极端"],["正常","轻度","中度","重度"],["未见","偶发","持续","全面"],["自发","外诱","主动","确认"]];
-                      const levelEn = [["Stable","Mild","Notable","Extreme"],["Normal","Slight","Moderate","Severe"],["None","Sporadic","Ongoing","Total"],["Casual","Prompted","Aware","Certain"]];
-                      return (
-                        <div style={{ flex: isMobile ? "none" : 1, height: isMobile ? 180 : 220, display: "flex", gap: 10, alignItems: "stretch", paddingTop: 4 }}>
-                          {/* SVG — fixed 48% of row width */}
-                          <div style={{ flex: "0 0 48%", minWidth: 0, minHeight: 0 }}>
-                            <svg viewBox="-10 -8 140 145" width="100%" height="100%" style={{ display: "block" }} preserveAspectRatio="xMidYMid meet">
-                              {[0.33, 0.66, 1].map(s => (
-                                <polygon key={s} points={radarGrid(s)} fill="none" stroke={th.border} strokeWidth={0.9} />
-                              ))}
-                              {Array.from({ length: radarN }, (_, i) => {
-                                const [x, y] = radarPt(i, 1);
-                                return <line key={i} x1={radarCx} y1={radarCy} x2={x} y2={y} stroke={th.border} strokeWidth={0.9} />;
-                              })}
-                              <polygon points={radarData} fill={CRIMSON} fillOpacity={0.18} stroke={CRIMSON} strokeWidth={1.8} strokeLinejoin="round" />
-                              {radarVals.map((v, i) => {
-                                const [x, y] = radarPt(i, v);
-                                return <circle key={i} cx={x} cy={y} r={2.5} fill={CRIMSON} />;
-                              })}
-                              {radarLabels.map((label, i) => {
-                                const [x, y] = radarPt(i, 1.3);
-                                return <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={7} fontFamily={MONO} fill={th.text}>{label}</text>;
-                              })}
-                            </svg>
-                          </div>
-                          {/* Metrics — flex 1, fills remaining space */}
-                          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-around" }}>
-                            {radarLabels.map((label, i) => {
-                              const pct = Math.round(radarVals[i] * 100);
-                              const isRisk = i === 4;
-                              const lvl = i < 4
-                                ? (lang === "zh" ? levelZh[i] : levelEn[i])[picks[i]]
-                                : (lang === "zh" ? t.reportRiskLevels : ["Low","Mid","High","Critical"])[riskIdx];
-                              return (
-                                <div key={i}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                                    <span style={{ fontSize: 11, fontFamily: MONO, color: th.text, letterSpacing: "0.06em" }}>{label}</span>
-                                    <span style={{ fontSize: 11, fontFamily: MONO, color: isRisk ? CRIMSON : th.text }}>{lvl}</span>
-                                  </div>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                                    <div style={{ flex: 1, height: 6, background: th.border, borderRadius: 3, overflow: "hidden" }}>
-                                      <div style={{ width: `${pct}%`, height: "100%", background: isRisk ? CRIMSON : th.mid }} />
-                                    </div>
-                                    <span style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: isRisk ? CRIMSON : th.text, flexShrink: 0 }}>{pct}%</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </Row>
-                </div>
-                {/* Right column */}
-                <div style={{ flex: isMobile ? "none" : 1, display: "flex", flexDirection: "column" }}>
-                  <Row label={t.reportDoctorNote} grow={1.6}>
-                    <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65, fontStyle: "italic" }}>{doctorNote}</div>
-                  </Row>
-                  <Row label={t.reportSymptom} grow={1.5}>
-                    <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65 }}>{profile.core}</div>
-                  </Row>
-                  <Row label={t.reportAnalysis} grow={1.5}>
-                    <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65 }}>{profile.contrast}</div>
-                  </Row>
-                  <Row label={t.reportSideProfile} grow={1.3}>
-                    <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65 }}>{profile.mirror}</div>
-                  </Row>
-                  <Row label={t.reportRx} grow={1.3}>
-                    <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65 }}>{profile.partner}</div>
-                  </Row>
-                  <Row label={t.reportPrognosis} grow={1}>
-                    <div style={{ fontSize: 11, color: th.text, fontFamily: SANS, lineHeight: 1.65 }}>{profile.career}</div>
-                  </Row>
-                </div>
-              </div>
-              {/* Footer */}
-              <div style={{ borderTop: `0.5px solid ${th.border}`, padding: "8px 18px", display: "flex", alignItems: "center", flexShrink: 0 }}>
-                <div style={{ flex: 1, fontSize: 11, color: th.dim, fontFamily: SANS, letterSpacing: "0.02em", textAlign: "center" }}>{t.reportFooter}</div>
-                {/* Revery Labs circular seal */}
-                <svg width={68} height={68} viewBox="0 0 100 100" style={{ flexShrink: 0, opacity: 0.5, transform: "rotate(-18deg)", marginRight: -6 }}>
-                  <defs>
-                    <path id="rl-seal-top" d="M 7,50 A 43,43 0 0,0 93,50" />
-                    <path id="rl-seal-bot" d="M 7,50 A 43,43 0 0,1 93,50" />
-                  </defs>
-                  <circle cx={50} cy={50} r={47} fill="none" stroke={CRIMSON} strokeWidth="3" />
-                  <circle cx={50} cy={50} r={38} fill="none" stroke={CRIMSON} strokeWidth="1" />
-                  <text fontSize="8" fontFamily={MONO} fill={CRIMSON} fontWeight="700" letterSpacing="2.5">
-                    <textPath href="#rl-seal-top" startOffset="50%" textAnchor="middle">REVERY LABS</textPath>
-                  </text>
-                  <text fontSize="7" fontFamily={MONO} fill={CRIMSON} letterSpacing="1.5">
-                    <textPath href="#rl-seal-bot" startOffset="50%" textAnchor="middle">恋爱脑诊断中心</textPath>
-                  </text>
-                  <text x={50} y={43} textAnchor="middle" dominantBaseline="central" fontSize="20" fontFamily={MONO} fill={CRIMSON} fontWeight="800">RL</text>
-                  <text x={50} y={61} textAnchor="middle" dominantBaseline="central" fontSize="10" fontFamily={MONO} fill={CRIMSON} letterSpacing="4">✦</text>
-                </svg>
-              </div>
-            </div>
-            {/* Retake */}
-            <button onClick={retake}
-              style={{ flexShrink: 0, width: "100%", marginTop: 8, padding: "14px 0", background: CRIMSON, border: "none", borderRadius: 8, color: "white", fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-            >{t.reportRetake}</button>
-            <PaymentBlock />
-          </div>
-        </div>
-        </>
-      );
-    }
+    const mbtiStr = profileData?.mbti || "";
+    const ennStr  = profileData?.enn  || "";
+    const zIdx    = profileData?.zodiacIdx ?? -1;
+    const { lbPct, reasonPct } = deriveScores(mbtiStr, ennStr, zIdx);
 
-    // ── Existing profile: standard card format ───────────────────────────────
-    const extraTag = [profileData?.mbti, profileData?.enn, profileData?.zodiacIdx >= 0 ? t.zodiacs[profileData.zodiacIdx] : ""].filter(Boolean).join(" · ");
     return (
       <>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Fixed top: profile header only */}
-        <div style={{ padding: "20px 24px 16px", flexShrink: 0, background: th.bg, borderBottom: `0.5px solid ${th.border}` }}>
-          <div style={{ maxWidth: 520, margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4 }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.2em", color: th.dim, fontFamily: SANS }}>{t.profileLabel.toUpperCase()}</div>
-              {extraTag && <div style={{ fontSize: 10, color: th.dim, fontFamily: SANS }}>{extraTag}</div>}
+      <div style={{ flex: 1, overflow: "auto", padding: `8px ${isMobile ? 8 : 20}px 32px` }}>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: isMobile ? undefined : 900, margin: isMobile ? undefined : "0 auto" }}>
+          {/* Diagnostic card */}
+          <div style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 16, display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", padding: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 2 }}>
+              <svg width={18} height={18} viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
+                <rect width={18} height={18} rx={6} fill={CRIMSON} />
+                <rect x={4.5} y={7.7} width={9} height={2.6} rx={1} fill="white" />
+                <rect x={7.7} y={4.5} width={2.6} height={9} rx={1} fill="white" />
+              </svg>
+              <span style={{ fontSize: 12, fontWeight: 800, color: CRIMSON, letterSpacing: "0.04em", fontFamily: SANS }}>{t.reportCenter}</span>
             </div>
-            <div style={{ fontFamily: SANS, fontSize: 32, fontWeight: 700, color: CRIMSON, lineHeight: 1.1, marginBottom: 4 }}>{profile.name}</div>
-            <div style={{ fontSize: 14, color: th.mid, fontFamily: SANS }}>{profile.tagline}</div>
-          </div>
-        </div>
-
-        {/* Scrollable: sections → retake → payment */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 28px" }}>
-          <div style={{ maxWidth: 520, margin: "0 auto" }}>
-            {t.sectionTitles.map((title, i) => {
-              const content = profile[SECTION_KEYS[i]];
-              if (!content) return null;
-              return (
-                <div key={i} style={{ padding: "16px 0", borderTop: `0.5px solid ${th.border}` }}>
-                  <div style={{ fontSize: 10, letterSpacing: "0.18em", color: CRIMSON, fontFamily: mFont, marginBottom: 8, textTransform: "uppercase", opacity: 0.75 }}>{title}</div>
-                  <div style={{ fontSize: 14, color: th.text, lineHeight: 1.9, fontFamily: SANS }}>{content}</div>
+            <div style={{ display: "flex", justifyContent: "center", margin: "10px 0 6px" }}>
+              <svg viewBox="0 0 80 70" width={80} height={70}>
+                <path
+                  d="M40 64 C20 50,6 38,6 24 C6 13,14 5,23 5 C30 5,36 9,40 15 C44 9,50 5,57 5 C66 5,74 13,74 24 C74 38,60 50,40 64Z"
+                  fill={CRIMSON} fillOpacity={0.07}
+                  stroke={CRIMSON} strokeWidth={1.4}
+                />
+                <path
+                  d="M12 32 L24 32 L28 16 L33 48 L38 32 L68 32"
+                  fill="none"
+                  stroke={CRIMSON} strokeWidth={1.5}
+                  strokeLinecap="round" strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div style={{ position: "relative", textAlign: "center", marginBottom: 14 }}>
+              <div style={{ fontSize: 25, fontWeight: 900, color: CRIMSON, lineHeight: 1.1, fontFamily: SANS }}>{profile.name}</div>
+              <div style={{ position: "absolute", top: -6, right: 4, transform: "rotate(11deg)", border: `2px solid ${CRIMSON}`, color: CRIMSON, borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", padding: "3px 7px", background: th.surface, fontFamily: MONO }}>{t.reportStamp}</div>
+            </div>
+            <div style={{ background: th.card, border: `1px dashed ${th.border}`, borderRadius: 12, padding: "9px 11px", fontSize: 11.5, color: th.text, lineHeight: 1.55, fontFamily: SANS }}>
+              {lang === "zh" ? "症状 · " : "Symptom · "}{profile.tagline}
+            </div>
+            {/* Lab report table */}
+            <div style={{ marginTop: 12, borderRadius: 7, overflow: "hidden", border: `0.5px solid ${th.border}` }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 54px 52px 50px", background: CRIMSON + "14", padding: "5px 10px", borderBottom: `0.5px solid ${th.border}` }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em" }}>检查项目</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em", textAlign: "right" }}>检测值</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em", textAlign: "right" }}>参考值</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em", textAlign: "right" }}>评估</span>
+              </div>
+              {[
+                { label: "恋爱脑浓度",   val: (lbPct + 0.4).toFixed(1),                                                ref: "< 40.0", flagged: lbPct > 40,                                               flag: lbPct > 70 ? "↑↑ 危急" : "↑ 偏高" },
+                { label: "理性防御力",   val: Math.max(0, reasonPct - 0.3).toFixed(1),                                 ref: "> 60.0", flagged: reasonPct < 60,                                            flag: reasonPct < 25 ? "↓↓ 危急" : "↓ 偏低" },
+                { label: "复发风险指数", val: Math.min(99.9, lbPct * 0.6 + (100 - reasonPct) * 0.4 + 1.2).toFixed(1), ref: "< 30.0", flagged: (lbPct * 0.6 + (100 - reasonPct) * 0.4 + 1.2) > 30, flag: (lbPct * 0.6 + (100 - reasonPct) * 0.4 + 1.2) > 70 ? "↑↑ 高危" : "↑ 注意" },
+              ].map(({ label, val, ref, flagged, flag }, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 54px 52px 50px", padding: "7px 10px", borderBottom: i < 2 ? `0.5px solid ${th.border}` : "none", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: th.text, fontFamily: SANS }}>{label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: flagged ? CRIMSON : th.mid, fontFamily: MONO, textAlign: "right" }}>{val}</span>
+                  <span style={{ fontSize: 9, color: th.dim, fontFamily: MONO, textAlign: "right" }}>{ref}</span>
+                  <span style={{ fontSize: 9.5, fontWeight: 600, color: flagged ? CRIMSON : th.mid, fontFamily: MONO, textAlign: "right" }}>{flagged ? flag : "正常"}</span>
                 </div>
-              );
-            })}
-
-            {/* Retake */}
-            <div style={{ paddingTop: 20, borderTop: `0.5px solid ${th.border}` }}>
-              <button onClick={retake} style={{ width: "100%", padding: "14px 0", background: CRIMSON, border: "none", borderRadius: 8, color: "white", fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-              >{t.retake}</button>
+              ))}
             </div>
-
-            {/* Payment CTA */}
-            <PaymentBlock />
+            {/* Seal stamp */}
+            <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
+              <svg width={44} height={44} viewBox="0 0 100 100" style={{ opacity: 0.35, transform: "rotate(-18deg)" }}>
+                <defs>
+                  <path id="rl-seal-top2" d="M 7,50 A 43,43 0 0,0 93,50" />
+                  <path id="rl-seal-bot2" d="M 7,50 A 43,43 0 0,1 93,50" />
+                </defs>
+                <circle cx={50} cy={50} r={47} fill="none" stroke={CRIMSON} strokeWidth="3" />
+                <circle cx={50} cy={50} r={38} fill="none" stroke={CRIMSON} strokeWidth="1" />
+                <text fontSize="8" fontFamily={MONO} fill={CRIMSON} fontWeight="700" letterSpacing="2.5">
+                  <textPath href="#rl-seal-top2" startOffset="50%" textAnchor="middle">REVERY LABS</textPath>
+                </text>
+                <text fontSize="7" fontFamily={MONO} fill={CRIMSON} letterSpacing="1.5">
+                  <textPath href="#rl-seal-bot2" startOffset="50%" textAnchor="middle">恋爱脑诊断中心</textPath>
+                </text>
+                <text x={50} y={43} textAnchor="middle" dominantBaseline="central" fontSize="20" fontFamily={MONO} fill={CRIMSON} fontWeight="800">RL</text>
+                <text x={50} y={61} textAnchor="middle" dominantBaseline="central" fontSize="10" fontFamily={MONO} fill={CRIMSON} letterSpacing="4">✦</text>
+              </svg>
+            </div>
           </div>
+
+          {/* Detail sections */}
+          {[
+            { label: t.reportAnalysis,    content: profile.contrast },
+            { label: t.reportSideProfile, content: profile.mirror   },
+            { label: t.reportRx,          content: profile.partner  },
+          ].map(({ label, content }, i) => content ? (
+            <div key={i} style={{ marginTop: 8, background: th.card, border: `0.5px solid ${th.border}`, borderRadius: 12, padding: "12px 18px" }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", color: CRIMSON, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
+              <div style={{ fontSize: 13, color: th.text, fontFamily: SANS, lineHeight: 1.75 }}>{content}</div>
+            </div>
+          ) : null)}
+
+          <div style={{ marginTop: 16, textAlign: "center", fontSize: 10, color: th.dim, fontFamily: SANS, letterSpacing: "0.02em", lineHeight: 1.6 }}>{t.reportFooter}</div>
+
+          <button onClick={retake}
+            style={{ flexShrink: 0, width: "100%", marginTop: 8, padding: "14px 0", background: CRIMSON, border: "none", borderRadius: 8, color: "white", fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+          >{t.reportRetake}</button>
+          <PaymentBlock />
         </div>
       </div>
       </>
     );
   } // end result
 
-  // ── Choose mode ───────────────────────────────────────────────────────────
-  if (screen === "choose") return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, gap: 28 }}>
-      <div style={{ fontFamily: SANS, fontSize: 30, fontWeight: 700, color: th.text, textAlign: "center" }}>
-        {t.chooseTitle}
-      </div>
-      <div style={{ display: "flex", gap: 16, width: "100%", maxWidth: 480 }}>
-        {[
-          { sc: "quiz",     title: t.chooseQuiz,     sub: t.chooseQuizSub },
-          { sc: "existing", title: t.chooseExisting, sub: t.chooseExistingSub },
-        ].map((opt) => (
-          <button key={opt.sc} onClick={() => setScreen(opt.sc)} style={{
-            flex: 1, padding: "22px 18px", background: th.card,
-            border: `0.5px solid ${th.border}`, borderRadius: 10,
-            cursor: "pointer", textAlign: "left", transition: "border-color 0.15s",
-          }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = CRIMSON}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = th.border}
-          >
-            <div style={{ fontSize: 17, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{opt.title}</div>
-            <div style={{ fontSize: 13, color: th.text, fontFamily: SANS, lineHeight: 1.6 }}>{opt.sub}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  // ── Enter existing results ────────────────────────────────────────────────
-  if (screen === "existing") {
+  // ── Input form ────────────────────────────────────────────────────────────
+  if (screen === "input") {
     const mbtiUpper = mbti.trim().toUpperCase();
     const mbtiValid = MBTI_OPTIONS.includes(mbtiUpper);
     const ennValid  = ENNEA_OPTIONS.includes(enneagram.trim());
@@ -1784,13 +1525,10 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       fontSize: 14, fontFamily: mFont, outline: "none", transition: "border-color 0.2s",
     });
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "100px 32px 32px" }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
-          <button onClick={() => setScreen("choose")} style={{ background: "none", border: "none", color: th.dim, cursor: "pointer", fontSize: 15, fontFamily: mFont, marginBottom: 24, padding: 0 }}>
-            {t.back}
-          </button>
           <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: th.text, marginBottom: 24 }}>
-            {t.chooseExisting}
+            {t.chooseTitle}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
@@ -1831,72 +1569,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       </div>
     );
   }
-
-  // ── Quiz — 2×2 quadrant layout ────────────────────────────────────────────
-  const canSubmit = picks.every((p) => p !== null);
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? 16 : 32, overflowY: "auto" }}>
-      <div style={{ width: "100%", maxWidth: 560 }}>
-        <button onClick={() => setScreen("choose")} style={{
-          background: "none", border: "none", color: th.dim, cursor: "pointer",
-          fontSize: 15, fontFamily: mFont, marginBottom: 24, padding: 0,
-        }}>{t.back}</button>
-
-        <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: th.text, marginBottom: 24 }}>
-          {t.chooseQuiz}
-        </div>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-          gridTemplateRows: "auto",
-          gridAutoFlow: "row",
-          gap: 14,
-          marginBottom: 16,
-        }}>
-          {t.qs.map((q, qi) => (
-              <div key={qi} style={{
-                display: "flex", flexDirection: "column", padding: "12px 16px",
-                border: `0.5px solid ${th.border}`, borderRadius: 10,
-              }}>
-                <div style={{ fontFamily: SANS, fontSize: 15, fontWeight: 600, color: th.text, marginBottom: 8, lineHeight: 1.3 }}>
-                  <span style={{ color: CRIMSON, fontFamily: mFont, fontSize: 15, marginRight: 6, opacity: 0.7 }}>{qi + 1}</span>
-                  {q.q}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
-                  {q.o.map((opt, oi) => {
-                    const sel = picks[qi] === oi;
-                    return (
-                      <div key={oi} onClick={() => setPicks((prev) => { const n = [...prev]; n[qi] = oi; return n; })} style={{
-                        height: 34, width: isMobile ? "100%" : undefined, maxWidth: isMobile ? "none" : 280, padding: "0 10px",
-                        background: sel ? "rgba(139,34,82,0.07)" : th.surface,
-                        border: `0.5px solid ${sel ? CRIMSON : th.border}`,
-                        borderRadius: 6, cursor: "pointer", fontSize: 15,
-                        color: sel ? th.text : th.mid, transition: "all 0.15s",
-                        display: "flex", alignItems: "center", gap: 8,
-                      }}>
-                        <div style={{ width: 10, height: 10, borderRadius: "50%", flexShrink: 0, border: `1.5px solid ${sel ? CRIMSON : th.border}`, background: sel ? CRIMSON : "none", transition: "all 0.15s" }} />
-                        {opt}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-          ))}
-        </div>
-
-        <button onClick={() => canSubmit && finishQuiz(picks)} disabled={!canSubmit} style={{
-          width: "100%", padding: "13px 0",
-          background: CRIMSON, border: "none", borderRadius: 7,
-          color: "white", fontSize: 15,
-          cursor: canSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em",
-          opacity: canSubmit ? 1 : 0.38, transition: "opacity 0.2s",
-        }}>
-          {t.viewRes}
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 // ─── DISTILL PAGE ─────────────────────────────────────────────────────────────
@@ -2622,8 +2295,8 @@ Write like someone genuinely helping a friend decode a situation, not writing a 
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [dark,    setDark]    = useState(false);
-  const [lang,    setLang]    = useState("zh");
+  const [dark,    setDark]    = useState(true);
+  const lang = "zh";
   const [page,    setPage]    = useState("assess");
   const [persona, setPersona] = useState(null);
   const [user,    setUser]    = useState(() => {
@@ -2706,7 +2379,7 @@ export default function App() {
       <Header
         page={page} onNavChange={handleNavChange}
         dark={dark} setDark={setDark}
-        lang={lang} setLang={setLang}
+        lang={lang}
         th={th} t={t}
         isPaid={isPaid} persona={persona}
         onPaywall={() => setShowPaywall(true)}
