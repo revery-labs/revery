@@ -154,59 +154,8 @@ function readFile(file) {
   });
 }
 
-async function analyzeTraits(uploads, personName, target) {
-  const combined = uploads
-    .filter((f) => f.content)
-    .map((f) => f.content)
-    .join("\n\n---\n\n")
-    .slice(0, 40000);
-  if (!combined) return "";
-
-  const subjectDesc = target === "her"
-    ? `"${personName}"（聊天中叫"${personName}"的那个人）`
-    : `除"${personName}"之外的另一个说话者（即"我"）`;
-
-  const prompt = `以下是聊天记录。请提取三部分内容：
-
-一、${subjectDesc}的说话风格（8-12条，每条单独一行，要具体不要笼统）：
-必须覆盖：标点习惯（几乎不用/偶尔用/爱用什么，具体举例）、句子长短偏好（单字/短句/长句，给出典型例子）、口头禅与语气词（具体词汇如"哈哈""嗯""啊""吧"等）、情绪表达方式（如何撒娇/冷淡/开心/不满）、用词风格（口语vs书面、网络词汇）、最有辨识度的语言特征
-
-二、聊天中的重要信息（8-12条，每条单独一行）：
-包括：双方关系和称呼方式、双方日常/工作/生活细节、重要事件和约定、反复出现的话题、共同的梗/暗语/习惯、情感状态和关系进展
-
-三、${subjectDesc}说过的原话摘录（6-10句，每句单独一行，直接引用原文不加引号）：
-优先选取最能体现其标点用法、句子长短、语气词、口头禅的原句
-
-格式（保留标题行，不加其他解释）：
-[说话风格]
-（一条特征）
-
-[重要记忆]
-（一条记忆）
-
-[原话摘录]
-（一句原话）
-
-聊天记录：
-${combined}`;
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.REACT_APP_ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5",
-      max_tokens: 1200,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!response.ok) return "";
-  const data = await response.json();
-  return data.content[0].text;
+async function analyzeTraits(_uploads, _personName, _target) {
+  return "";
 }
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
@@ -334,8 +283,6 @@ Revery Labs · 最后更新：2026年5月
 你上传的聊天记录在你的设备本地进行预处理。我们不会将聊天记录的原始内容永久存储在我们的服务器上。
 
 四、第三方服务
-Revery Labs 使用 Anthropic API 提供 AI 分析功能。你上传的内容摘要会通过 Anthropic 的服务器进行处理。Anthropic 有其独立的隐私政策，详见 anthropic.com/privacy。
-
 支付功能由 Stripe 提供。我们不存储你的银行卡信息。Stripe 的隐私政策详见 stripe.com/privacy。
 
 五、数据安全
@@ -374,8 +321,6 @@ Revery Labs · Last updated: May 2026
 Your uploaded chat logs are pre-processed locally on your device. We do not permanently store the raw content of your chat logs on our servers.
 
 4. Third-Party Services
-Revery Labs uses the Anthropic API to power AI analysis. Summaries of your uploaded content are processed through Anthropic's servers. Anthropic maintains its own privacy policy at anthropic.com/privacy.
-
 Payments are processed by Stripe. We do not store your payment card details. Stripe's privacy policy is available at stripe.com/privacy.
 
 5. Data Security
@@ -630,7 +575,7 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
   const [copied,    setCopied]    = useState(false);
   const isMobile = useIsMobile();
 
-  const navOpts = t.nav.map((l, i) => ({ v: ["assess", "distill", "app"][i], l }));
+  const navOpts = t.nav.filter((_, i) => i < 2).map((l, i) => ({ v: ["assess", "distill"][i], l }));
   const mFont   = lang === "en" ? SANS : MONO;
 
   const disabledVals = !isPaid
@@ -1915,6 +1860,7 @@ function AppPage({ t, th, lang, persona, onHistory }) {
       const traitsSection = persona.traits
         ? `\n\n【说话特征与重要记忆】\n${persona.traits}`
         : "";
+      // eslint-disable-next-line no-unused-vars
       const systemPrompt = persona.target === "her"
         ? `你是"${persona.name}"本人——不是AI，不是助手，就是ta这个真实的人活在这里。${traitsSection}
 
@@ -1997,28 +1943,7 @@ C.【意外反转】出乎ta的预期——可以是意想不到的温柔、一�
       }
       history.push({ role: "user", content: userMsg });
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.REACT_APP_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5",
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: history,
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || response.statusText);
-      }
-      const data  = await response.json();
-      const reply = data.content[0].text;
+      const reply = "【AI 功能暂时下线】";
       setMessages((prev) => [...prev, { role: "her", text: reply }]);
     } catch (e) {
       console.error(e);
@@ -2036,6 +1961,7 @@ C.【意外反转】出乎ta的预期——可以是意想不到的温柔、一�
     const userMsg = { role: "user", text: userText };
     setAnalyzeMessages((prev) => [...prev, userMsg]);
     try {
+      // eslint-disable-next-line no-unused-vars
       const sysPrompt = lang === "zh"
         ? `你是一个极其犀利的情感解码专家。你的分析让人读完之后会想：「这个人怎么什么都看穿了」。
 
@@ -2071,19 +1997,7 @@ Write like someone genuinely helping a friend decode a situation, not writing a 
         history.push({ role: m.role === "user" ? "user" : "assistant", content: m.text });
       }
       history.push({ role: "user", content: firstUserContent });
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.REACT_APP_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({ model: "claude-haiku-4-5", max_tokens: 2048, system: sysPrompt, messages: history }),
-      });
-      if (!response.ok) { const err = await response.json(); throw new Error(err.error?.message || response.statusText); }
-      const data = await response.json();
-      setAnalyzeMessages((prev) => [...prev, { role: "assistant", text: data.content[0].text }]);
+      setAnalyzeMessages((prev) => [...prev, { role: "assistant", text: "【AI 功能暂时下线】" }]);
     } catch (e) {
       setAnalyzeMessages((prev) => [...prev, { role: "assistant", text: "[错误] " + e.message }]);
     }
@@ -2322,7 +2236,7 @@ export default function App() {
 
   const handleDistilled = (p) => {
     setPersona(p);
-    setPage("app");
+    setPage("distill");
   };
 
   const handleAppHistory = (messages) => {

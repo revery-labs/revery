@@ -16,36 +16,8 @@ function readFile(file) {
   });
 }
 
-async function analyzeTraits(uploads, personName) {
-  const combined = uploads
-    .filter((f) => f.content)
-    .map((f) => f.content)
-    .join("\n\n---\n\n")
-    .slice(0, 40000);
-
-  if (!combined) return "";
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.REACT_APP_ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5",
-      max_tokens: 512,
-      messages: [{
-        role: "user",
-        content: `以下是"${personName}"的聊天记录或文字内容。请分析她的说话特征，提炼出3-6条最明显的规律，包括：常用语气词或口头禅、句式习惯、标点使用习惯、回复长短风格、情绪表达方式。每条单独一行，简洁描述，不要编号。\n\n${combined}`,
-      }],
-    }),
-  });
-
-  if (!response.ok) return "";
-  const data = await response.json();
-  return data.content[0].text;
+async function analyzeTraits(_uploads, _personName) {
+  return "";
 }
 
 // ─── SIGNAL ANALYSIS ──────────────────────────────────────────────────────────
@@ -375,29 +347,7 @@ function ChatPage({ personas, activePersonaIdx, setActivePersonaIdx }) {
       }
       history.push({ role: "user", content: userMsg });
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.REACT_APP_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5",
-          max_tokens: 256,
-          system: systemPrompt,
-          messages: history,
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || response.statusText);
-      }
-
-      const data = await response.json();
-      const reply = data.content[0].text;
+      const reply = "【AI 功能暂时下线】";
       setMessages((prev) => [...prev, { role: "her", text: reply }]);
       if (mode === "simulate") setSignals(computeSignals(reply));
     } catch (e) {
