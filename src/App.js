@@ -8,6 +8,8 @@ const CRIMSON    = "#8b2252";
 const SANS       = '"Helvetica Neue", Helvetica, "PingFang SC", "苹方-简", -apple-system, sans-serif';
 const MONO       = '"SF Mono", "DM Mono", ui-monospace, monospace';
 const SERIF_LOGO = "'Cormorant Garamond', Georgia, serif";
+// 黑卡结果页本轮只交付深色主题，光/暗切换按钮暂隐藏（逻辑保留，dark 仍默认 true）
+const SHOW_THEME_TOGGLE = false;
 
 const mkTh = (dark) => dark ? {
   bg: "#0d0a0f", surface: "#150f1a", card: "#1c1424",
@@ -77,7 +79,7 @@ const TX = {
     submitExisting: "生成我的画像",
     profileLabel: "你的情感档案",
     sectionTitles: ["人格底色","反差洞察","人格镜像","适配伴侣","事业发展"],
-    premCopy: "对症下药——\n医生，我这段关系还有得「救」嘛？\n留下邮箱，药方上线第一时间喊你。",
+    premCopy: "对症下药——\n留个邮箱，你的方子熬好第一个喊你——\n放心，不问是给谁配的。",
     back: "← 返回",
     // distill
     herName:    "她叫什么",
@@ -134,7 +136,7 @@ const TX = {
     regName: "昵称", regEmail: "邮箱", regPw: "密码（至少6位）", regSubmit: "完成注册",
     regPrivacy: "我同意 Revery Labs 的", regPrivacyLink: "隐私政策及个人信息共享条款",
     paywallTitle: "对症下药", paywallSub: "医生，我还有得「救」嘛",
-    emailPH: "你的邮箱地址", emailSubmit: "排队候药", emailSuccess: "已加入候诊名单", emailSuccessSub: "药方一配好，第一时间喊你来取。", disclaimer: "仅供娱乐与自我反思参考 · 「如有雷同，说明你确实病了」",
+    emailPH: "你的邮箱地址", emailSubmit: "排队候药", emailSuccess: "已挂号。", emailSuccessSub: "方子在熬，好了直接寄进你邮箱——先把病例发给那个和你一个病的人。", disclaimer: "仅供娱乐与自我反思参考 · 「如有雷同，说明你确实病了」",
     loginBtn: "登入", loginTitle: "欢迎回来", loginSub: "登入你的账号继续使用",
     loginEmail: "邮箱", loginPw: "密码", loginSubmit: "登入",
     loginError: "邮箱或密码不正确，请重试", loginNoAcc: "还没有账号？完成测评并付费后注册",
@@ -590,9 +592,11 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
     const userInitial = (user?.name || user?.email || "")[0]?.toUpperCase();
     return (
       <>
-        <IconBtn onClick={() => setDark((d) => !d)} th={th} font={SANS} style={{ ...s, fontSize: compact ? 15 : 18, paddingBottom: compact ? 1 : 3 }}>
-          {dark ? t.light : t.dark}
-        </IconBtn>
+        {SHOW_THEME_TOGGLE && (
+          <IconBtn onClick={() => setDark((d) => !d)} th={th} font={SANS} style={{ ...s, fontSize: compact ? 15 : 18, paddingBottom: compact ? 1 : 3 }}>
+            {dark ? t.light : t.dark}
+          </IconBtn>
+        )}
         <IconBtn onClick={handleShare} th={th} font={SANS} style={s}>{copied ? "✓" : <ShareIcon />}</IconBtn>
         {user && (
           <button onClick={onAccount} style={{ width: compact ? 30 : 34, height: compact ? 30 : 34, borderRadius: "50%", background: CRIMSON, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -610,10 +614,10 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
           {/* Row 1: compact logo + icon buttons */}
           <div style={{ height: 52, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
             <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}>
-              <img src="/logo.png" alt="" style={{ height: 48, width: "auto", display: "block" }} />
+              <img src="/logo.png" alt="" style={{ height: 48, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
               <div style={{ fontSize: 20, lineHeight: 1 }}>
-                <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
-                <span style={{ fontFamily: SERIF_LOGO, color: th.mid, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 5 }}>LABS</span>
+                <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: REPORT_PRIMARY }}>Revery</span>
+                <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 5 }}>LABS</span>
               </div>
             </div>
             <div style={{ flex: 1 }} />
@@ -624,13 +628,13 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
         <div style={{ height: 72, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
           {/* Logo */}
           <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            <img src="/logo.png" alt="" style={{ height: 72, width: "auto", display: "block" }} />
+            <img src="/logo.png" alt="" style={{ height: 72, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
             <div>
               <div style={{ fontSize: 26, lineHeight: 1 }}>
-                <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: CRIMSON }}>Revery</span>
-                <span style={{ fontFamily: SERIF_LOGO, color: th.mid, fontSize: 16, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 7 }}>LABS</span>
+                <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: REPORT_PRIMARY }}>Revery</span>
+                <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: 16, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 7 }}>LABS</span>
               </div>
-              <div style={{ fontSize: 12, color: th.text, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
+              <div style={{ fontSize: 12, color: REPORT_SECONDARY, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
             </div>
           </div>
           <div style={{ flex: 1 }} />
@@ -656,6 +660,16 @@ const ENNEA_OPTIONS = ["1w9","1w2","2w1","2w3","3w2","3w4","4w3","4w5","5w4","5w
 // 顺序对齐 t.zodiacs（白羊…双鱼）与 scripts/assemble.js 的 SIGN_LIST
 const ZODIAC_SLUGS = ["aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces"];
 // ─── ASSESS PAGE ──────────────────────────────────────────────────────────────
+// 黑卡深色主题 token（本轮仅结果/输入两屏使用；未接入全站 mkTh，其余页面不受影响）
+const REPORT_BG        = "#101010";
+const REPORT_BORDER    = "#3A362E";
+const REPORT_PRIMARY   = "#F2ECE4";
+const REPORT_SECONDARY = "#B8B0A6";
+// 唯一强调色：仅用于填充（主按钮底、已确诊图章描边/章内文字）与 ≥19px 大字（页脚台词）。
+// 红色不得以 <19px 文本形式出现在任何位置——回归测试请守住这条。
+const REPORT_RED       = "#C8402F";
+const SERIF_CJK        = "'Noto Serif SC','Songti SC',serif";
+
 function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const SAVED_KEY = "revery_profile_v2";
   const mFont = lang === "en" ? SANS : MONO;
@@ -708,25 +722,25 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
         setPayEmailSent(true);
       };
       return (
-        <div style={{ marginTop: 16, background: th.card, border: `0.5px solid ${th.border}`, borderRadius: 10, padding: "16px 18px" }}>
+        <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 10, padding: "16px 18px" }}>
           {payEmailSent ? (
             <>
-              <div style={{ fontSize: 14, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6, textAlign: "center" }}>{t.emailSuccess}</div>
-              <div style={{ fontSize: 12, color: th.mid, fontFamily: SANS, lineHeight: 1.65, textAlign: "center" }}>{t.emailSuccessSub}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6, textAlign: "center" }}>{t.emailSuccess}</div>
+              <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.65, textAlign: "center" }}>{t.emailSuccessSub}</div>
             </>
           ) : (
             <>
               {t.premCopy.split("\n").map((line, i) => (
-                <p key={i} style={{ fontSize: i === 0 ? 14 : 12, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? th.text : th.mid, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
+                <p key={i} style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? REPORT_PRIMARY : REPORT_SECONDARY, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
               ))}
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSub()}
                   placeholder={t.emailPH}
-                  style={{ flex: 1, background: th.input, border: `0.5px solid ${th.border}`, borderRadius: 6, padding: "9px 12px", color: th.text, fontSize: 13, fontFamily: SANS, outline: "none" }}
+                  style={{ flex: 1, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "9px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none" }}
                 />
                 <button onClick={handleSub} disabled={!canSub}
-                  style={{ padding: "9px 16px", background: canSub ? CRIMSON : th.border, border: "none", borderRadius: 6, color: canSub ? "white" : th.dim, fontSize: 13, cursor: canSub ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
+                  style={{ padding: "9px 16px", background: canSub ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSub ? "white" : REPORT_SECONDARY, fontSize: 14, cursor: canSub ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
                 >{t.emailSubmit}</button>
               </div>
             </>
@@ -735,105 +749,83 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       );
     };
 
-    const { lianAiNao, liXingFangYu, fuFaFengXian } = profile.metrics;
+    const sections = [
+      { key: "symptom",  label: lang === "zh" ? "症状" : "Symptom", content: profile.chief_complaint, serif: true },
+      { key: "analysis", label: t.reportAnalysis,    content: profile.analysis },
+      { key: "profile",  label: t.reportSideProfile, content: profile.profile },
+      { key: "rx",       label: t.reportRx,          content: profile.prescription },
+      { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `${profile.bgm.song} — ${profile.bgm.artist}` : null },
+    ];
 
     return (
       <>
-      <div style={{ flex: 1, overflow: "auto", padding: `8px ${isMobile ? 8 : 20}px 32px` }}>
-        <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: isMobile ? undefined : 900, margin: isMobile ? undefined : "0 auto" }}>
-          {/* Diagnostic card */}
-          <div style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 16, display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", padding: 18 }}>
+      <div style={{
+        flex: 1, overflow: "auto", background: REPORT_BG,
+        padding: `calc(8px + env(safe-area-inset-top)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-left))`,
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 680, margin: "0 auto" }}>
+          {/* Diagnostic card: title + stamp only */}
+          <div style={{ background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 16, display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 2 }}>
               <svg width={18} height={18} viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
-                <rect width={18} height={18} rx={6} fill={CRIMSON} />
-                <rect x={4.5} y={7.7} width={9} height={2.6} rx={1} fill="white" />
-                <rect x={7.7} y={4.5} width={2.6} height={9} rx={1} fill="white" />
+                <rect width={18} height={18} rx={6} fill={REPORT_SECONDARY} opacity={0.25} />
+                <rect x={4.5} y={7.7} width={9} height={2.6} rx={1} fill={REPORT_PRIMARY} />
+                <rect x={7.7} y={4.5} width={2.6} height={9} rx={1} fill={REPORT_PRIMARY} />
               </svg>
-              <span style={{ fontSize: 12, fontWeight: 800, color: CRIMSON, letterSpacing: "0.04em", fontFamily: SANS }}>{t.reportCenter}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: REPORT_SECONDARY, letterSpacing: "0.04em", fontFamily: SANS }}>{t.reportCenter}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "center", margin: "10px 0 6px" }}>
               <svg viewBox="0 0 80 70" width={80} height={70}>
                 <path
                   d="M40 64 C20 50,6 38,6 24 C6 13,14 5,23 5 C30 5,36 9,40 15 C44 9,50 5,57 5 C66 5,74 13,74 24 C74 38,60 50,40 64Z"
-                  fill={CRIMSON} fillOpacity={0.07}
-                  stroke={CRIMSON} strokeWidth={1.4}
+                  fill={REPORT_SECONDARY} fillOpacity={0.08}
+                  stroke={REPORT_SECONDARY} strokeWidth={1.4}
                 />
                 <path
                   d="M12 32 L24 32 L28 16 L33 48 L38 32 L68 32"
                   fill="none"
-                  stroke={CRIMSON} strokeWidth={1.5}
+                  stroke={REPORT_SECONDARY} strokeWidth={1.5}
                   strokeLinecap="round" strokeLinejoin="round"
                 />
               </svg>
             </div>
-            <div style={{ position: "relative", textAlign: "center", marginBottom: 14 }}>
-              <div style={{ fontSize: 25, fontWeight: 900, color: CRIMSON, lineHeight: 1.1, fontFamily: SANS }}>{profile.disease}（{profile.subtype}）</div>
-              <div style={{ position: "absolute", top: -6, right: 4, transform: "rotate(11deg)", border: `2px solid ${CRIMSON}`, color: CRIMSON, borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", padding: "3px 7px", background: th.surface, fontFamily: MONO }}>{t.reportStamp}</div>
+            <div style={{ position: "relative", textAlign: "center", marginBottom: 4 }}>
+              <div style={{ fontSize: "clamp(22px, 6vw, 34px)", fontWeight: 900, color: REPORT_PRIMARY, lineHeight: 1.15, fontFamily: SERIF_CJK }}>{profile.disease}（{profile.subtype}）</div>
+              <div style={{ position: "absolute", top: -6, right: 4, transform: "rotate(11deg)", border: `2px solid ${REPORT_RED}`, color: REPORT_RED, borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", padding: "3px 7px", background: REPORT_BG, fontFamily: MONO }}>{t.reportStamp}</div>
             </div>
-            <div style={{ background: th.card, border: `1px dashed ${th.border}`, borderRadius: 12, padding: "9px 11px", fontSize: 11.5, color: th.text, lineHeight: 1.55, fontFamily: SANS }}>
-              {lang === "zh" ? "症状 · " : "Symptom · "}{profile.chief_complaint}
-            </div>
-            {/* Lab report table */}
-            <div style={{ marginTop: 12, borderRadius: 7, overflow: "hidden", border: `0.5px solid ${th.border}` }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 54px 52px 50px", background: CRIMSON + "14", padding: "5px 10px", borderBottom: `0.5px solid ${th.border}` }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em" }}>检查项目</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em", textAlign: "right" }}>检测值</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em", textAlign: "right" }}>参考值</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: CRIMSON, fontFamily: MONO, letterSpacing: "0.06em", textAlign: "right" }}>评估</span>
-              </div>
-              {[
-                { label: "恋爱脑浓度",   val: lianAiNao.toFixed(1),    ref: "< 40.0", flagged: lianAiNao > 40,       flag: lianAiNao > 70 ? "↑↑ 危急" : "↑ 偏高" },
-                { label: "理性防御力",   val: liXingFangYu.toFixed(1), ref: "> 60.0", flagged: liXingFangYu < 60,    flag: liXingFangYu < 25 ? "↓↓ 危急" : "↓ 偏低" },
-                { label: "复发风险指数", val: fuFaFengXian.toFixed(1), ref: "< 30.0", flagged: fuFaFengXian > 30,    flag: fuFaFengXian > 70 ? "↑↑ 高危" : "↑ 注意" },
-              ].map(({ label, val, ref, flagged, flag }, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 54px 52px 50px", padding: "7px 10px", borderBottom: i < 2 ? `0.5px solid ${th.border}` : "none", alignItems: "center" }}>
-                  <span style={{ fontSize: 11, color: th.text, fontFamily: SANS }}>{label}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: flagged ? CRIMSON : th.mid, fontFamily: MONO, textAlign: "right" }}>{val}</span>
-                  <span style={{ fontSize: 9, color: th.dim, fontFamily: MONO, textAlign: "right" }}>{ref}</span>
-                  <span style={{ fontSize: 9.5, fontWeight: 600, color: flagged ? CRIMSON : th.mid, fontFamily: MONO, textAlign: "right" }}>{flagged ? flag : "正常"}</span>
-                </div>
-              ))}
-            </div>
-            {/* Seal stamp */}
+            {/* Seal stamp (decorative watermark, neutral — red reserved for stamp/buttons/footer only) */}
             <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
               <svg width={44} height={44} viewBox="0 0 100 100" style={{ opacity: 0.35, transform: "rotate(-18deg)" }}>
                 <defs>
                   <path id="rl-seal-top2" d="M 7,50 A 43,43 0 0,0 93,50" />
                   <path id="rl-seal-bot2" d="M 7,50 A 43,43 0 0,1 93,50" />
                 </defs>
-                <circle cx={50} cy={50} r={47} fill="none" stroke={CRIMSON} strokeWidth="3" />
-                <circle cx={50} cy={50} r={38} fill="none" stroke={CRIMSON} strokeWidth="1" />
-                <text fontSize="8" fontFamily={MONO} fill={CRIMSON} fontWeight="700" letterSpacing="2.5">
+                <circle cx={50} cy={50} r={47} fill="none" stroke={REPORT_SECONDARY} strokeWidth="3" />
+                <circle cx={50} cy={50} r={38} fill="none" stroke={REPORT_SECONDARY} strokeWidth="1" />
+                <text fontSize="8" fontFamily={MONO} fill={REPORT_SECONDARY} fontWeight="700" letterSpacing="2.5">
                   <textPath href="#rl-seal-top2" startOffset="50%" textAnchor="middle">REVERY LABS</textPath>
                 </text>
-                <text fontSize="7" fontFamily={MONO} fill={CRIMSON} letterSpacing="1.5">
+                <text fontSize="7" fontFamily={MONO} fill={REPORT_SECONDARY} letterSpacing="1.5">
                   <textPath href="#rl-seal-bot2" startOffset="50%" textAnchor="middle">恋爱脑诊断中心</textPath>
                 </text>
-                <text x={50} y={43} textAnchor="middle" dominantBaseline="central" fontSize="20" fontFamily={MONO} fill={CRIMSON} fontWeight="800">RL</text>
-                <text x={50} y={61} textAnchor="middle" dominantBaseline="central" fontSize="10" fontFamily={MONO} fill={CRIMSON} letterSpacing="4">✦</text>
+                <text x={50} y={43} textAnchor="middle" dominantBaseline="central" fontSize="20" fontFamily={MONO} fill={REPORT_SECONDARY} fontWeight="800">RL</text>
+                <text x={50} y={61} textAnchor="middle" dominantBaseline="central" fontSize="10" fontFamily={MONO} fill={REPORT_SECONDARY} letterSpacing="4">✦</text>
               </svg>
             </div>
           </div>
 
-          {/* Detail sections */}
-          {[
-            { label: t.reportAnalysis,    content: profile.analysis },
-            { label: t.reportSideProfile, content: profile.profile  },
-            { label: t.reportRx,          content: profile.prescription },
-          ].map(({ label, content }, i) => content ? (
-            <div key={i} style={{ marginTop: 8, background: th.card, border: `0.5px solid ${th.border}`, borderRadius: 12, padding: "12px 18px" }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", color: CRIMSON, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
-              <div style={{ fontSize: 13, color: th.text, fontFamily: SANS, lineHeight: 1.75 }}>{content}</div>
-              {label === t.reportRx && profile.bgm && (
-                <div style={{ fontSize: 11.5, color: th.dim, fontFamily: SANS, marginTop: 8 }}>本病例 BGM：{profile.bgm.song} — {profile.bgm.artist}</div>
-              )}
+          {/* 症状 / 病情分析 / 患者侧写 / 治疗处方 / 本病例BGM */}
+          {sections.map(({ key, label, content, serif }) => content ? (
+            <div key={key} style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "12px 18px" }}>
+              <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
+              <div style={{ fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: serif ? SERIF_CJK : SANS, lineHeight: 1.75 }}>{content}</div>
             </div>
           ) : null)}
 
-          <div style={{ marginTop: 16, textAlign: "center", fontSize: 10, color: th.dim, fontFamily: SANS, letterSpacing: "0.02em", lineHeight: 1.6 }}>{t.reportFooter}</div>
+          <div style={{ marginTop: 16, textAlign: "center", fontSize: "clamp(19px, 2vw, 20px)", fontWeight: 700, color: REPORT_RED, fontFamily: SERIF_CJK, letterSpacing: "0.02em", lineHeight: 1.5, whiteSpace: isMobile ? "normal" : "nowrap" }}>{t.reportFooter}</div>
 
           <button onClick={retake}
-            style={{ flexShrink: 0, width: "100%", marginTop: 8, padding: "14px 0", background: CRIMSON, border: "none", borderRadius: 8, color: "white", fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            style={{ flexShrink: 0, width: "100%", marginTop: 8, padding: "14px 0", background: REPORT_RED, border: "none", borderRadius: 8, color: "white", fontSize: 16, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
           >{t.reportRetake}</button>
@@ -852,45 +844,49 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     const canSubmit = mbtiValid || ennValid || zodiacIdx >= 0;
     const fieldStyle = (active) => ({
       width: "100%", boxSizing: "border-box",
-      background: th.input, border: `0.5px solid ${active ? CRIMSON : th.border}`,
-      borderRadius: 6, padding: "11px 14px", color: th.text,
-      fontSize: 14, fontFamily: mFont, outline: "none", transition: "border-color 0.2s",
+      background: REPORT_BG, border: `1px solid ${active ? REPORT_RED : REPORT_BORDER}`,
+      borderRadius: 6, padding: "11px 14px", color: REPORT_PRIMARY,
+      fontSize: 16, fontFamily: mFont, outline: "none", transition: "border-color 0.2s",
     });
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "100px 32px 32px" }}>
+      <div style={{
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        background: REPORT_BG,
+        padding: `calc(32px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left))`,
+      }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
-          <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: th.text, marginBottom: 24 }}>
+          <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 24 }}>
             {t.chooseTitle}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{t.mbtiLabel}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>{t.mbtiLabel}</div>
               <select value={mbti} onChange={(e) => setMbti(e.target.value)}
-                style={{ ...fieldStyle(mbti && mbtiValid), appearance: "none", cursor: "pointer", color: mbti ? th.text : th.dim, fontFamily: SANS }}>
+                style={{ ...fieldStyle(mbti && mbtiValid), appearance: "none", cursor: "pointer", color: mbti ? REPORT_PRIMARY : REPORT_SECONDARY, fontFamily: SANS }}>
                 <option value="">{t.mbtiPH}</option>
                 {MBTI_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{t.ennLabel}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>{t.ennLabel}</div>
               <select value={enneagram} onChange={(e) => setEnneagram(e.target.value)}
-                style={{ ...fieldStyle(ennValid && !!enneagram), appearance: "none", cursor: "pointer", color: enneagram ? th.text : th.dim }}>
+                style={{ ...fieldStyle(ennValid && !!enneagram), appearance: "none", cursor: "pointer", color: enneagram ? REPORT_PRIMARY : REPORT_SECONDARY }}>
                 <option value="">{t.ennPH}</option>
                 {ENNEA_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: th.text, fontFamily: SANS, marginBottom: 6 }}>{t.zodLabel}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>{t.zodLabel}</div>
               <select value={zodiacIdx} onChange={(e) => setZodiacIdx(parseInt(e.target.value))}
-                style={{ ...fieldStyle(false), appearance: "none", cursor: "pointer", color: zodiacIdx >= 0 ? th.text : th.dim }}>
+                style={{ ...fieldStyle(false), appearance: "none", cursor: "pointer", color: zodiacIdx >= 0 ? REPORT_PRIMARY : REPORT_SECONDARY }}>
                 <option value={-1}>{t.zodPH}</option>
                 {t.zodiacs.map((z, i) => <option key={i} value={i}>{z}</option>)}
               </select>
             </div>
             <button onClick={submitExisting} disabled={!canSubmit} style={{
               width: "100%", padding: "13px 0", marginTop: 8,
-              background: CRIMSON, border: "none", borderRadius: 7,
-              color: "white", fontSize: 15,
+              background: REPORT_RED, border: "none", borderRadius: 7,
+              color: "white", fontSize: 16,
               cursor: canSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em",
               opacity: canSubmit ? 1 : 0.38, transition: "opacity 0.2s",
             }}>
