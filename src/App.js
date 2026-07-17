@@ -714,39 +714,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   // ── Result ────────────────────────────────────────────────────────────────
   if (screen === "result" && profile) {
-    const PaymentBlock = () => {
-      const canSub = payEmail.includes("@") && payEmail.includes(".");
-      const handleSub = async () => {
-        if (!canSub) return;
-        await saveInterestEmail(payEmail, lang);
-        setPayEmailSent(true);
-      };
-      return (
-        <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 10, padding: "16px 18px" }}>
-          {payEmailSent ? (
-            <>
-              <div style={{ fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6, textAlign: "center" }}>{t.emailSuccess}</div>
-              <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.65, textAlign: "center" }}>{t.emailSuccessSub}</div>
-            </>
-          ) : (
-            <>
-              {t.premCopy.split("\n").map((line, i) => (
-                <p key={i} style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? REPORT_PRIMARY : REPORT_SECONDARY, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
-              ))}
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSub()}
-                  placeholder={t.emailPH}
-                  style={{ flex: 1, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "9px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none" }}
-                />
-                <button onClick={handleSub} disabled={!canSub}
-                  style={{ padding: "9px 16px", background: canSub ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSub ? "white" : REPORT_SECONDARY, fontSize: 14, cursor: canSub ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
-                >{t.emailSubmit}</button>
-              </div>
-            </>
-          )}
-        </div>
-      );
+    const canSubEmail = payEmail.includes("@") && payEmail.includes(".");
+    const handleSubEmail = async () => {
+      if (!canSubEmail) return;
+      await saveInterestEmail(payEmail, lang);
+      setPayEmailSent(true);
     };
 
     const sections = [
@@ -829,7 +801,30 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
           >{t.reportRetake}</button>
-          <PaymentBlock />
+          <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 10, padding: "16px 18px" }}>
+            {payEmailSent ? (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6, textAlign: "center" }}>{t.emailSuccess}</div>
+                <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.65, textAlign: "center" }}>{t.emailSuccessSub}</div>
+              </>
+            ) : (
+              <>
+                {t.premCopy.split("\n").map((line, i) => (
+                  <p key={i} style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? REPORT_PRIMARY : REPORT_SECONDARY, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
+                ))}
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleSubEmail()}
+                    placeholder={t.emailPH}
+                    style={{ flex: 1, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "9px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none" }}
+                  />
+                  <button onClick={handleSubEmail} disabled={!canSubEmail}
+                    style={{ padding: "9px 16px", background: canSubEmail ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSubEmail ? "white" : REPORT_SECONDARY, fontSize: 14, cursor: canSubEmail ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
+                  >{t.emailSubmit}</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
       </>
