@@ -79,7 +79,7 @@ const TX = {
     submitExisting: "生成我的画像",
     profileLabel: "你的情感档案",
     sectionTitles: ["人格底色","反差洞察","人格镜像","适配伴侣","事业发展"],
-    premCopy: "对症下药——\n留个邮箱，你的方子熬好第一个喊你——\n放心，不问是给谁配的。",
+    premCopy: "对症下药\n留个邮箱，你的方子熬好第一个喊你。\n放心，不问是给谁配的。",
     back: "← 返回",
     // distill
     herName:    "她叫什么",
@@ -612,12 +612,12 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
       {isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", background: th.surface, borderBottom: `0.5px solid ${th.border}`, flexShrink: 0, zIndex: 10, position: "relative" }}>
           {/* Row 1: compact logo + icon buttons */}
-          <div style={{ height: 52, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
+          <div style={{ height: 68, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
             <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}>
-              <img src="/logo.png" alt="" style={{ height: 48, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
-              <div style={{ fontSize: 20, lineHeight: 1 }}>
+              <img src="/logo.png" alt="" style={{ height: 60, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
+              <div style={{ fontSize: "clamp(22px, 5vw, 30px)", lineHeight: 1 }}>
                 <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: REPORT_PRIMARY }}>Revery</span>
-                <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 5 }}>LABS</span>
+                <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: "clamp(14px, 3.25vw, 20px)", fontWeight: 700, letterSpacing: "0.18em", marginLeft: 5 }}>LABS</span>
               </div>
             </div>
             <div style={{ flex: 1 }} />
@@ -625,16 +625,16 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
           </div>
         </div>
       ) : (
-        <div style={{ height: 72, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
+        <div style={{ height: 124, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
           {/* Logo */}
           <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            <img src="/logo.png" alt="" style={{ height: 72, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
+            <img src="/logo.png" alt="" style={{ height: 108, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
             <div>
-              <div style={{ fontSize: 26, lineHeight: 1 }}>
+              <div style={{ fontSize: "clamp(22px, 5vw, 30px)", lineHeight: 1 }}>
                 <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: REPORT_PRIMARY }}>Revery</span>
-                <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: 16, fontWeight: 700, letterSpacing: "0.18em", marginLeft: 7 }}>LABS</span>
+                <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: "clamp(14px, 3.25vw, 20px)", fontWeight: 700, letterSpacing: "0.18em", marginLeft: 7 }}>LABS</span>
               </div>
-              <div style={{ fontSize: 12, color: REPORT_SECONDARY, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
+              <div style={{ fontSize: "clamp(14px, 1.2vw, 16px)", color: REPORT_SECONDARY, letterSpacing: "0.1em", marginTop: 5, fontFamily: SANS }}>{t.tagline}</div>
             </div>
           </div>
           <div style={{ flex: 1 }} />
@@ -744,7 +744,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                 <rect x={4.5} y={7.7} width={9} height={2.6} rx={1} fill={REPORT_PRIMARY} />
                 <rect x={7.7} y={4.5} width={2.6} height={9} rx={1} fill={REPORT_PRIMARY} />
               </svg>
-              <span style={{ fontSize: 12, fontWeight: 800, color: REPORT_SECONDARY, letterSpacing: "0.04em", fontFamily: SANS }}>{t.reportCenter}</span>
+              <span style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: 800, color: REPORT_SECONDARY, letterSpacing: "0.08em", fontFamily: SANS }}>{t.reportCenter}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "center", margin: "10px 0 6px" }}>
               <svg viewBox="0 0 80 70" width={80} height={70}>
@@ -763,11 +763,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             </div>
             <div style={{ position: "relative", textAlign: "center", marginBottom: 4 }}>
               <div style={{ fontSize: "clamp(22px, 6vw, 34px)", fontWeight: 900, color: REPORT_PRIMARY, lineHeight: 1.15, fontFamily: SERIF_CJK }}>{profile.disease}（{profile.subtype}）</div>
-              <div style={{ position: "absolute", top: -6, right: 4, transform: "rotate(11deg)", border: `2px solid ${REPORT_RED}`, color: REPORT_RED, borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", padding: "3px 7px", background: REPORT_BG, fontFamily: MONO }}>{t.reportStamp}</div>
+              <div style={{ position: "absolute", top: -10, right: 2, transform: "rotate(11deg)", border: `2.6px solid ${REPORT_RED}`, color: REPORT_RED, borderRadius: 10, fontSize: 13, fontWeight: 800, letterSpacing: "0.12em", padding: "4px 9px", background: REPORT_BG, fontFamily: MONO }}>{t.reportStamp}</div>
             </div>
             {/* Seal stamp (decorative watermark, neutral — red reserved for stamp/buttons/footer only) */}
             <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
-              <svg width={44} height={44} viewBox="0 0 100 100" style={{ opacity: 0.35, transform: "rotate(-18deg)" }}>
+              <svg width={57} height={57} viewBox="0 0 100 100" style={{ opacity: 0.35, transform: "rotate(-18deg)" }}>
                 <defs>
                   <path id="rl-seal-top2" d="M 7,50 A 43,43 0 0,0 93,50" />
                   <path id="rl-seal-bot2" d="M 7,50 A 43,43 0 0,1 93,50" />
