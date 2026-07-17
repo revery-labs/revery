@@ -614,7 +614,6 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
           {/* Row 1: compact logo + icon buttons */}
           <div style={{ height: 68, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
             <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}>
-              <img src="/logo.png" alt="" style={{ height: 60, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
               <div style={{ fontSize: "clamp(22px, 5vw, 30px)", lineHeight: 1 }}>
                 <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: REPORT_PRIMARY }}>Revery</span>
                 <span style={{ fontFamily: SERIF_LOGO, color: REPORT_PRIMARY, fontSize: "clamp(14px, 3.25vw, 20px)", fontWeight: 700, letterSpacing: "0.18em", marginLeft: 5 }}>LABS</span>
@@ -628,7 +627,6 @@ function Header({ page, onNavChange, dark, setDark, lang, th, t, isPaid, persona
         <div style={{ height: 124, display: "flex", alignItems: "center", padding: "0 28px", borderBottom: `0.5px solid ${th.border}`, background: th.surface, flexShrink: 0, gap: 14, zIndex: 10, position: "relative" }}>
           {/* Logo */}
           <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            <img src="/logo.png" alt="" style={{ height: 108, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
             <div>
               <div style={{ fontSize: "clamp(22px, 5vw, 30px)", lineHeight: 1 }}>
                 <span style={{ fontFamily: SERIF_LOGO, fontStyle: "italic", fontWeight: 700, color: REPORT_PRIMARY }}>Revery</span>
