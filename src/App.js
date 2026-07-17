@@ -845,9 +845,9 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     });
     return (
       <div style={{
-        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start",
         background: REPORT_BG,
-        padding: `calc(32px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left))`,
+        padding: `calc(80px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left))`,
       }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
           <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 24 }}>
