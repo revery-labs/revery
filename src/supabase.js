@@ -31,6 +31,40 @@ export async function saveInterestEmail(email, lang) {
   });
 }
 
+// ── 漏斗埋点（Phase 1.1）─────────────────────────────────────────────────────────
+// 隔离铁律：combo 与选择值只进 funnel_events，绝不写入 interest_emails，两表永不关联。
+function uuidv4() {
+  try { if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID(); } catch { /* noop */ }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+// 首次进入生成 session_id，存 sessionStorage（每标签页会话一个）
+export function getFunnelSessionId() {
+  try {
+    let sid = sessionStorage.getItem("revery_sid");
+    if (!sid) { sid = uuidv4(); sessionStorage.setItem("revery_sid", sid); }
+    return sid;
+  } catch {
+    return uuidv4();
+  }
+}
+
+// fire-and-forget：失败静默、不阻塞 UI、不重试
+export function logFunnelEvent(event, payload) {
+  try {
+    if (!supabase) return;
+    const insert = supabase.from("funnel_events").insert({
+      session_id: getFunnelSessionId(),
+      event,
+      payload: payload ?? null,
+    });
+    if (insert && typeof insert.then === "function") insert.then(() => {}, () => {});
+  } catch { /* swallow: 埋点绝不影响用户流程 */ }
+}
+
 export async function saveUser(info) {
   if (!supabase) return;
   await supabase.from("users").upsert({

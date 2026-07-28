@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail } from "./supabase";
+import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
+import { COPY, ENNEAGRAM_HINTS } from "./copy";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const CRIMSON    = "#8b2252";
@@ -683,20 +684,37 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [zodiacIdx,   setZodiacIdx]  = useState(-1);
   const [profileData, setProfileData] = useState(savedData || null);
 
-  const getProfile = (pd) => {
-    if (!pd) return null;
+  // 查表键构造（与埋点 combo_key 同源，逐字节一致）
+  const comboKeyOf = (pd) => {
     const mbtiKey = MBTI_OPTIONS.includes(pd.mbti) ? pd.mbti : MBTI_OPTIONS[0];
     const ennKey  = ENNEA_OPTIONS.includes(pd.enn) ? pd.enn : ENNEA_OPTIONS[0];
     const signIdx = pd.zodiacIdx >= 0 && pd.zodiacIdx < ZODIAC_SLUGS.length ? pd.zodiacIdx : 0;
-    return RESULTS[`${mbtiKey}_${ennKey}_${ZODIAC_SLUGS[signIdx]}`] || null;
+    return `${mbtiKey}_${ennKey}_${ZODIAC_SLUGS[signIdx]}`;
   };
+  const getProfile = (pd) => (pd ? (RESULTS[comboKeyOf(pd)] || null) : null);
   const profile = getProfile(profileData);
 
-  const saveAndShow = (data) => {
-    localStorage.setItem(SAVED_KEY, JSON.stringify(data));
-    setProfileData(data);
-    setScreen("result");
-  };
+  // 1.1 view_landing：每标签页会话仅上报一次，fire-and-forget
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem("revery_landing_logged")) {
+        sessionStorage.setItem("revery_landing_logged", "1");
+        logFunnelEvent("view_landing");
+      }
+    } catch { logFunnelEvent("view_landing"); }
+  }, []);
+
+  // 1.1 view_result：进入结果页时按 combo_key 上报一次（含返场直达结果的情况）
+  const loggedResultRef = useRef(null);
+  useEffect(() => {
+    if (screen === "result" && profile && profileData) {
+      const ck = comboKeyOf(profileData);
+      if (loggedResultRef.current !== ck) {
+        loggedResultRef.current = ck;
+        logFunnelEvent("view_result", { combo_key: ck });
+      }
+    }
+  }, [screen, profile, profileData]);
 
   const retake = () => {
     localStorage.removeItem(SAVED_KEY);
@@ -705,16 +723,27 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     setMbti("");
     setEnneagram("");
     setZodiacIdx(-1);
+    loggedResultRef.current = null;
   };
 
-  const submitExisting = () =>
-    saveAndShow({ source: "existing", mbti: mbti.trim().toUpperCase(), enn: enneagram.trim(), zodiacIdx });
+  const submitExisting = () => {
+    const data = { source: "existing", mbti: mbti.trim().toUpperCase(), enn: enneagram.trim(), zodiacIdx };
+    logFunnelEvent("submit");
+    localStorage.setItem(SAVED_KEY, JSON.stringify(data));
+    setProfileData(data);
+    // 1.2 提交后固定时长 loading（剧场只到文案层），随后进结果或错误态
+    setScreen("loading");
+    setTimeout(() => {
+      setScreen(getProfile(data) ? "result" : "error");
+    }, 900);
+  };
 
   // ── Result ────────────────────────────────────────────────────────────────
   if (screen === "result" && profile) {
     const canSubEmail = payEmail.includes("@") && payEmail.includes(".");
     const handleSubEmail = async () => {
       if (!canSubEmail) return;
+      logFunnelEvent("email_submit"); // 只记事件，不带邮箱值（隔离铁律）
       await saveInterestEmail(payEmail, lang);
       setPayEmailSent(true);
     };
@@ -794,6 +823,9 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
           <div style={{ marginTop: 16, textAlign: "center", fontSize: "clamp(19px, 2vw, 20px)", fontWeight: 700, color: REPORT_RED, fontFamily: SERIF_CJK, letterSpacing: "0.02em", lineHeight: 1.5, whiteSpace: isMobile ? "normal" : "nowrap" }}>{t.reportFooter}</div>
 
+          {/* 1.5 娱乐向免责声明（结果页底部；非红、更小字号，与红字压底句并存） */}
+          <div style={{ marginTop: 8, textAlign: "center", fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6 }}>{COPY.disclaimer}</div>
+
           <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 10, padding: "16px 18px" }}>
             {payEmailSent ? (
               <>
@@ -805,7 +837,9 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                 {t.premCopy.split("\n").map((line, i) => (
                   <p key={i} style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? REPORT_PRIMARY : REPORT_SECONDARY, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
                 ))}
-                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                {/* 1.4 样例预览行（输入框上方）*/}
+                <div style={{ fontSize: 13, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, margin: "10px 0 2px" }}>{COPY.emailSample}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                   <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSubEmail()}
                     placeholder={t.emailPH}
@@ -815,6 +849,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                     style={{ padding: "9px 16px", background: canSubEmail ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSubEmail ? REPORT_PRIMARY : REPORT_SECONDARY, fontSize: 14, cursor: canSubEmail ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
                   >{t.emailSubmit}</button>
                 </div>
+                {/* 1.4 信任句（输入框下方小字）——前提：funnel_events 与 interest_emails 两表隔离（1.1 已实现）*/}
+                <div style={{ fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, marginTop: 8 }}>{COPY.emailTrust}</div>
               </>
             )}
           </div>
@@ -829,6 +865,32 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       </>
     );
   } // end result
+
+  // ── Loading（提交后固定时长；剧场只到文案层，无进度条、非随机）───────────────────
+  if (screen === "loading") {
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: REPORT_BG, padding: 32 }}>
+        <div style={{ maxWidth: 420, textAlign: "center", fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: SERIF_CJK, lineHeight: 1.7 }}>
+          {COPY.loading}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error（results.json 加载失败等）─────────────────────────────────────────────
+  if (screen === "error") {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: REPORT_BG, padding: 32, gap: 18 }}>
+        <div style={{ maxWidth: 420, textAlign: "center", fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: SERIF_CJK, lineHeight: 1.7 }}>
+          {COPY.loadError}
+        </div>
+        <button onClick={() => { try { window.location.reload(); } catch { setScreen("input"); } }}
+          style={{ padding: "11px 22px", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em" }}>
+          刷新
+        </button>
+      </div>
+    );
+  }
 
   // ── Input form ────────────────────────────────────────────────────────────
   if (screen === "input") {
@@ -855,25 +917,28 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>{t.mbtiLabel}</div>
-              <select value={mbti} onChange={(e) => setMbti(e.target.value)}
+              <select value={mbti}
+                onChange={(e) => { const v = e.target.value; setMbti(v); if (v) logFunnelEvent("select_mbti", { value: v }); }}
                 style={{ ...fieldStyle(mbti && mbtiValid), appearance: "none", cursor: "pointer", color: mbti ? REPORT_PRIMARY : REPORT_SECONDARY, fontFamily: SANS }}>
-                <option value="">{t.mbtiPH}</option>
+                <option value="">{COPY.mbtiPH}</option>
                 {MBTI_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>{t.ennLabel}</div>
-              <select value={enneagram} onChange={(e) => setEnneagram(e.target.value)}
+              <select value={enneagram}
+                onChange={(e) => { const v = e.target.value; setEnneagram(v); if (v) logFunnelEvent("select_enneagram", { value: v }); }}
                 style={{ ...fieldStyle(ennValid && !!enneagram), appearance: "none", cursor: "pointer", color: enneagram ? REPORT_PRIMARY : REPORT_SECONDARY }}>
-                <option value="">{t.ennPH}</option>
-                {ENNEA_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                <option value="">{COPY.ennPH}</option>
+                {ENNEA_OPTIONS.map((opt) => <option key={opt} value={opt}>{`${opt} · ${ENNEAGRAM_HINTS[opt]}`}</option>)}
               </select>
             </div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>{t.zodLabel}</div>
-              <select value={zodiacIdx} onChange={(e) => setZodiacIdx(parseInt(e.target.value))}
+              <select value={zodiacIdx}
+                onChange={(e) => { const i = parseInt(e.target.value); setZodiacIdx(i); if (i >= 0) logFunnelEvent("select_sign", { value: ZODIAC_SLUGS[i] }); }}
                 style={{ ...fieldStyle(false), appearance: "none", cursor: "pointer", color: zodiacIdx >= 0 ? REPORT_PRIMARY : REPORT_SECONDARY }}>
-                <option value={-1}>{t.zodPH}</option>
+                <option value={-1}>{COPY.zodPH}</option>
                 {t.zodiacs.map((z, i) => <option key={i} value={i}>{z}</option>)}
               </select>
             </div>
@@ -884,8 +949,12 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               cursor: canSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em",
               opacity: canSubmit ? 1 : 0.38, transition: "opacity 0.2s",
             }}>
-              {t.submitView}
+              {COPY.submit}
             </button>
+            {/* 1.5 娱乐向免责声明（页脚；非红、小字，不替换红字压底句） */}
+            <div style={{ marginTop: 18, fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, textAlign: "center" }}>
+              {COPY.disclaimer}
+            </div>
           </div>
         </div>
       </div>
