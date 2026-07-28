@@ -720,7 +720,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     };
 
     const sections = [
-      { key: "symptom",  label: lang === "zh" ? "症状" : "Symptom", content: profile.chief_complaint, serif: true },
+      { key: "symptom",  label: lang === "zh" ? "主诉" : "Complaint", content: profile.chief_complaint, serif: true },
       { key: "analysis", label: t.reportAnalysis,    content: profile.analysis },
       { key: "profile",  label: t.reportSideProfile, content: profile.profile },
       { key: "rx",       label: t.reportRx,          content: profile.prescription },
@@ -794,11 +794,6 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
           <div style={{ marginTop: 16, textAlign: "center", fontSize: "clamp(19px, 2vw, 20px)", fontWeight: 700, color: REPORT_RED, fontFamily: SERIF_CJK, letterSpacing: "0.02em", lineHeight: 1.5, whiteSpace: isMobile ? "normal" : "nowrap" }}>{t.reportFooter}</div>
 
-          <button onClick={retake}
-            style={{ flexShrink: 0, width: "100%", marginTop: 8, padding: "14px 0", background: REPORT_RED, border: "none", borderRadius: 8, color: "white", fontSize: 16, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-          >{t.reportRetake}</button>
           <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 10, padding: "16px 18px" }}>
             {payEmailSent ? (
               <>
@@ -817,12 +812,18 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                     style={{ flex: 1, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "9px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none" }}
                   />
                   <button onClick={handleSubEmail} disabled={!canSubEmail}
-                    style={{ padding: "9px 16px", background: canSubEmail ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSubEmail ? "white" : REPORT_SECONDARY, fontSize: 14, cursor: canSubEmail ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
+                    style={{ padding: "9px 16px", background: canSubEmail ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSubEmail ? REPORT_PRIMARY : REPORT_SECONDARY, fontSize: 14, cursor: canSubEmail ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
                   >{t.emailSubmit}</button>
                 </div>
               </>
             )}
           </div>
+
+          <button onClick={retake}
+            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+          >{t.reportRetake}</button>
         </div>
       </div>
       </>
