@@ -837,9 +837,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                 {t.premCopy.split("\n").map((line, i) => (
                   <p key={i} style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? REPORT_PRIMARY : REPORT_SECONDARY, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
                 ))}
-                {/* 1.4 样例预览行（输入框上方）*/}
-                <div style={{ fontSize: 13, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, margin: "10px 0 2px" }}>{COPY.emailSample}</div>
-                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSubEmail()}
                     placeholder={t.emailPH}
@@ -900,7 +898,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     const canSubmit = mbtiValid || ennValid || zodiacIdx >= 0;
     const fieldStyle = (active) => ({
       width: "100%", boxSizing: "border-box",
-      background: REPORT_BG, border: `1px solid ${active ? REPORT_RED : REPORT_BORDER}`,
+      background: REPORT_BG, border: `1px solid ${active ? REPORT_PRIMARY : REPORT_BORDER}`,
       borderRadius: 6, padding: "11px 14px", color: REPORT_PRIMARY,
       fontSize: 16, fontFamily: mFont, outline: "none", transition: "border-color 0.2s",
     });
@@ -920,7 +918,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               <select value={mbti}
                 onChange={(e) => { const v = e.target.value; setMbti(v); if (v) logFunnelEvent("select_mbti", { value: v }); }}
                 style={{ ...fieldStyle(mbti && mbtiValid), appearance: "none", cursor: "pointer", color: mbti ? REPORT_PRIMARY : REPORT_SECONDARY, fontFamily: SANS }}>
-                <option value="">{COPY.mbtiPH}</option>
+                <option value=""></option>
                 {MBTI_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
@@ -929,7 +927,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               <select value={enneagram}
                 onChange={(e) => { const v = e.target.value; setEnneagram(v); if (v) logFunnelEvent("select_enneagram", { value: v }); }}
                 style={{ ...fieldStyle(ennValid && !!enneagram), appearance: "none", cursor: "pointer", color: enneagram ? REPORT_PRIMARY : REPORT_SECONDARY }}>
-                <option value="">{COPY.ennPH}</option>
+                <option value=""></option>
                 {ENNEA_OPTIONS.map((opt) => <option key={opt} value={opt}>{`${opt} · ${ENNEAGRAM_HINTS[opt]}`}</option>)}
               </select>
             </div>
@@ -938,7 +936,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               <select value={zodiacIdx}
                 onChange={(e) => { const i = parseInt(e.target.value); setZodiacIdx(i); if (i >= 0) logFunnelEvent("select_sign", { value: ZODIAC_SLUGS[i] }); }}
                 style={{ ...fieldStyle(false), appearance: "none", cursor: "pointer", color: zodiacIdx >= 0 ? REPORT_PRIMARY : REPORT_SECONDARY }}>
-                <option value={-1}>{COPY.zodPH}</option>
+                <option value={-1}></option>
                 {t.zodiacs.map((z, i) => <option key={i} value={i}>{z}</option>)}
               </select>
             </div>
