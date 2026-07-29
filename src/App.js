@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
 import { COPY, ENNEAGRAM_HINTS } from "./copy";
+import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const CRIMSON    = "#8b2252";
@@ -683,6 +684,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [enneagram,   setEnneagram]  = useState("");
   const [zodiacIdx,   setZodiacIdx]  = useState(-1);
   const [profileData, setProfileData] = useState(savedData || null);
+  // 2.2 分享卡：仅分享步用到，称呼不进主漏斗、不入库
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [patientName,   setPatientName]   = useState("");
+  const [shareImg,      setShareImg]      = useState(null);
+  const shareCanvasRef = useRef(null);
 
   // 查表键构造（与埋点 combo_key 同源，逐字节一致）
   const comboKeyOf = (pd) => {
@@ -715,6 +721,13 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       }
     }
   }, [screen, profile, profileData]);
+
+  // 2.2 分享卡：模态打开或称呼变化时重绘（称呼变化则清掉上次生成的图片）
+  useEffect(() => {
+    if (showShareCard && profile && shareCanvasRef.current) {
+      drawShareCard(shareCanvasRef.current, { profile, patientName });
+    }
+  }, [showShareCard, patientName, profile]);
 
   const retake = () => {
     localStorage.removeItem(SAVED_KEY);
@@ -853,13 +866,54 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             )}
           </div>
 
+          {/* 2.2 分享入口：描边样式，不占红色名额 */}
+          <button onClick={() => { setShareImg(null); setShowShareCard(true); logFunnelEvent("share_open"); }}
+            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 8, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+          >生成分享病例卡</button>
+
           <button onClick={retake}
-            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
           >{t.reportRetake}</button>
         </div>
       </div>
+
+      {/* 2.2/2.3 分享卡模态 */}
+      <Modal show={showShareCard} onClose={() => setShowShareCard(false)} th={th}>
+        <div style={{ fontFamily: SANS, fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 4, textAlign: "center" }}>分享病例卡</div>
+        <div style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, marginBottom: 12, textAlign: "center", lineHeight: 1.6 }}>称呼可留空，默认「匿名患者」；仅用于卡面，不上传、不入库。</div>
+        <input type="text" value={patientName} maxLength={12}
+          onChange={(e) => { setPatientName(e.target.value); setShareImg(null); }}
+          placeholder="匿名患者"
+          style={{ width: "100%", boxSizing: "border-box", background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "10px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none", marginBottom: 12 }}
+        />
+        {/* 预览（未生成时显示 canvas，生成后显示可长按保存的图片）*/}
+        {shareImg ? (
+          <img src={shareImg} alt="病例卡" style={{ width: "100%", borderRadius: 10, display: "block", border: `1px solid ${REPORT_BORDER}` }} />
+        ) : (
+          <canvas ref={shareCanvasRef} style={{ width: "100%", borderRadius: 10, display: "block", border: `1px solid ${REPORT_BORDER}` }} />
+        )}
+        {shareImg && (
+          <div style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, margin: "10px 0 0", textAlign: "center", lineHeight: 1.6 }}>长按图片保存，或用下方按钮下载。</div>
+        )}
+        <button
+          onClick={() => {
+            try {
+              const url = shareImg || (shareCanvasRef.current && shareCanvasRef.current.toDataURL("image/png"));
+              if (!url) return;
+              if (!shareImg) setShareImg(url);
+              logFunnelEvent("share_save");
+              const a = document.createElement("a");
+              a.href = url; a.download = `revery-病例卡-${(profile && profile.case_id) || "card"}.png`;
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            } catch { /* 保存失败静默，不阻塞 */ }
+          }}
+          style={{ width: "100%", marginTop: 12, padding: "12px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 7, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: SANS, fontWeight: 600, letterSpacing: "0.06em" }}
+        >保存图片</button>
+      </Modal>
       </>
     );
   } // end result
