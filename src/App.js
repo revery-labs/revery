@@ -689,6 +689,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [patientName,   setPatientName]   = useState("");
   const [shareImg,      setShareImg]      = useState(null);
   const shareCanvasRef = useRef(null);
+  const shareSavedRef  = useRef(false); // share_save 每次打开只报一次
 
   // 查表键构造（与埋点 combo_key 同源，逐字节一致）
   const comboKeyOf = (pd) => {
@@ -722,10 +723,14 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     }
   }, [screen, profile, profileData]);
 
-  // 2.2 分享卡：模态打开或称呼变化时重绘（称呼变化则清掉上次生成的图片）
+  // 2.2 分享卡：模态打开或称呼变化时重绘并生成可长按保存的图片；share_save 每次打开只报一次
   useEffect(() => {
     if (showShareCard && profile && shareCanvasRef.current) {
       drawShareCard(shareCanvasRef.current, { profile, patientName });
+      try {
+        setShareImg(shareCanvasRef.current.toDataURL("image/png"));
+        if (!shareSavedRef.current) { shareSavedRef.current = true; logFunnelEvent("share_save"); }
+      } catch { /* 生成失败静默 */ }
     }
   }, [showShareCard, patientName, profile]);
 
@@ -867,7 +872,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
           </div>
 
           {/* 2.2 分享入口：描边样式，不占红色名额 */}
-          <button onClick={() => { setShareImg(null); setShowShareCard(true); logFunnelEvent("share_open"); }}
+          <button onClick={() => { setShareImg(null); shareSavedRef.current = false; setShowShareCard(true); logFunnelEvent("share_open"); }}
             style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 8, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
@@ -890,29 +895,21 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
           placeholder="匿名患者"
           style={{ width: "100%", boxSizing: "border-box", background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "10px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none", marginBottom: 12 }}
         />
-        {/* 预览（未生成时显示 canvas，生成后显示可长按保存的图片）*/}
-        {shareImg ? (
+        {/* 隐藏 canvas 仅用于绘制；展示可长按保存的图片 */}
+        <canvas ref={shareCanvasRef} style={{ display: "none" }} />
+        {shareImg && (
           <img src={shareImg} alt="病例卡" style={{ width: "100%", borderRadius: 10, display: "block", border: `1px solid ${REPORT_BORDER}` }} />
-        ) : (
-          <canvas ref={shareCanvasRef} style={{ width: "100%", borderRadius: 10, display: "block", border: `1px solid ${REPORT_BORDER}` }} />
         )}
         {shareImg && (
-          <div style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, margin: "10px 0 0", textAlign: "center", lineHeight: 1.6 }}>长按图片保存，或用下方按钮下载。</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: REPORT_SECONDARY, margin: "12px 0 0", textAlign: "center", lineHeight: 1.6 }}>长按图片保存到相册。</div>
         )}
-        <button
-          onClick={() => {
-            try {
-              const url = shareImg || (shareCanvasRef.current && shareCanvasRef.current.toDataURL("image/png"));
-              if (!url) return;
-              if (!shareImg) setShareImg(url);
-              logFunnelEvent("share_save");
-              const a = document.createElement("a");
-              a.href = url; a.download = `revery-病例卡-${(profile && profile.case_id) || "card"}.png`;
-              document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            } catch { /* 保存失败静默，不阻塞 */ }
-          }}
-          style={{ width: "100%", marginTop: 12, padding: "12px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 7, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: SANS, fontWeight: 600, letterSpacing: "0.06em" }}
-        >保存图片</button>
+        {shareImg && (
+          <div style={{ textAlign: "center", marginTop: 8 }}>
+            <a href={shareImg} download={`revery-病例卡-${(profile && profile.case_id) || "card"}.png`}
+              style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, textDecoration: "underline", textUnderlineOffset: 3 }}
+            >桌面端点此下载图片</a>
+          </div>
+        )}
       </Modal>
       </>
     );

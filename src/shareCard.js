@@ -2,7 +2,7 @@
 // 分享卡 v1（Phase 2.2）· 竖版 3:4，Canvas 直绘导出 PNG。
 // 直绘而非 html2canvas：无新依赖、导出尺寸固定、CJK 用系统字体即时渲染不糊
 // （小红书内置浏览器 / iOS Safari 稳定）。
-// 配色：#101010 底 / #F2ECE4 字；卡内红色仅 1 处（「已确诊」章），远低于 ≤3 上限。
+// 配色：#101010 底 / #F2ECE4 字；卡内红色恰好 3 处：已确诊章 / 病历编号 / 红字压底句。
 // ─────────────────────────────────────────────────────────────────────────────
 import { COPY } from "./copy";
 import { pickVerdict } from "./verdicts";
@@ -71,21 +71,21 @@ export function drawShareCard(canvas, data) {
   ctx.font = `900 54px ${SERIF}`;
   ctx.fillStyle = FG;
   ctx.fillText("恋爱脑病例报告", PAD, y);
-  // 「已确诊」章（卡内唯一红色）
-  ctx.font = `800 26px ${SANS}`;
+  // 「已确诊」章（红色 1/3）· 放大约 1.3 倍
+  ctx.font = `800 34px ${SANS}`;
   const stampText = "已确诊";
-  const stampW = ctx.measureText(stampText).width + 28;
+  const stampW = ctx.measureText(stampText).width + 36;
   const stampX = CARD_W - PAD - stampW;
   ctx.strokeStyle = RED;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(stampX, y - 2, stampW, 46);
+  ctx.lineWidth = 4;
+  ctx.strokeRect(stampX, y - 6, stampW, 60);
   ctx.fillStyle = RED;
-  ctx.fillText(stampText, stampX + 14, y + 8);
-  y += 78;
+  ctx.fillText(stampText, stampX + 18, y + 6);
+  y += 84;
 
-  // 病历编号
-  ctx.font = `500 28px ${SANS}`;
-  ctx.fillStyle = DIM;
+  // 病历编号（红色 2/3）
+  ctx.font = `600 28px ${SANS}`;
+  ctx.fillStyle = RED;
   ctx.fillText(`病历编号 ${profile.case_id || "—"}`, PAD, y);
   y += 54;
 
@@ -133,6 +133,12 @@ export function drawShareCard(canvas, data) {
   ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CARD_W - PAD, y); ctx.stroke();
   y += 30;
+
+  // 红字压底句（红色 3/3）· 置于发病率行上方，克制字号、红色衬线
+  ctx.font = `700 24px ${SERIF}`;
+  ctx.fillStyle = RED;
+  for (const l of wrapLines(ctx, "本报告由 Revery Labs 恋爱脑诊断中心出具 · 如有雷同，说明你确实病了", CW)) { ctx.fillText(l, PAD, y); y += 34; }
+  y += 12;
 
   // 5｜发病率行
   ctx.font = `500 28px ${SANS}`;
