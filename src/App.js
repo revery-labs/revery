@@ -889,10 +889,10 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       {/* 2.2/2.3 分享卡模态 */}
       <Modal show={showShareCard} onClose={() => setShowShareCard(false)} th={th}>
         <div style={{ fontFamily: SANS, fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 4, textAlign: "center" }}>分享病例卡</div>
-        <div style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, marginBottom: 12, textAlign: "center", lineHeight: 1.6 }}>称呼可留空，默认「匿名患者」；仅用于卡面，不上传、不入库。</div>
+        <div style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, marginBottom: 12, textAlign: "center", lineHeight: 1.6 }}>称呼可留空；留空则用你的类型代号。仅用于卡面，不上传、不入库。</div>
         <input type="text" value={patientName} maxLength={12}
           onChange={(e) => { setPatientName(e.target.value); setShareImg(null); }}
-          placeholder="匿名患者"
+          placeholder="留空＝你的类型代号"
           style={{ width: "100%", boxSizing: "border-box", background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "10px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none", marginBottom: 12 }}
         />
         {/* 隐藏 canvas 仅用于绘制；展示可长按保存的图片 */}

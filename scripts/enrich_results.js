@@ -36,10 +36,9 @@ const WING_FRAC = (1 / 9) * (1 / 2); // = 1/18
 const SIGN_FRAC = 1 / 12;
 
 function formatIncidence(pct) {
-  // pct 为百分比数值（如 0.05 表示 0.05%）
-  let p = pct;
-  if (p < 0.02) p = 0.02;            // 下限 0.02%
-  return p >= 1 ? p.toFixed(1) : p.toFixed(2);
+  // pct 为百分比数值（如 0.05 表示 0.05%）。≥1% 一位小数；<1% 两位小数。
+  // 下限逻辑已移除（改人数口径后不再需要 0.02% 地板）。
+  return pct >= 1 ? pct.toFixed(1) : pct.toFixed(2);
 }
 
 function main() {
