@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
-import { COPY, ENNEAGRAM_HINTS } from "./copy";
+import { COPY, ENNEAGRAM_HINTS, stripDashes } from "./copy";
 import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -767,10 +767,10 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     };
 
     const sections = [
-      { key: "symptom",  label: lang === "zh" ? "主诉" : "Complaint", content: profile.chief_complaint, serif: true },
-      { key: "analysis", label: t.reportAnalysis,    content: profile.analysis },
-      { key: "profile",  label: t.reportSideProfile, content: profile.profile },
-      { key: "rx",       label: t.reportRx,          content: profile.prescription },
+      { key: "symptom",  label: lang === "zh" ? "主诉" : "Complaint", content: stripDashes(profile.chief_complaint), serif: true },
+      { key: "analysis", label: t.reportAnalysis,    content: stripDashes(profile.analysis) },
+      { key: "profile",  label: t.reportSideProfile, content: stripDashes(profile.profile) },
+      { key: "rx",       label: t.reportRx,          content: stripDashes(profile.prescription) },
       { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `${profile.bgm.song} · ${profile.bgm.artist}` : null },
     ];
 

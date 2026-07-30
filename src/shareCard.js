@@ -9,7 +9,7 @@
 //   - incidence 改人数口径「每 N 人中 1 例」。
 //   - 确诊日期为渲染当日，不入 results.json，不参与"同组合逐字节一致"断言。
 // ─────────────────────────────────────────────────────────────────────────────
-import { COPY } from "./copy";
+import { COPY, stripDashes } from "./copy";
 import { pickVerdict } from "./verdicts";
 
 const BG = "#101010";
@@ -172,8 +172,8 @@ export function drawShareCard(canvas, data) {
     for (const l of wrapLines(ctx, body, CW)) { ctx.fillText(l, PAD, y); y += 44; }
     y += 26;
   };
-  drawBlock("主诉", toCornerQuotes(profile.chief_complaint));
-  drawBlock("医嘱", toCornerQuotes(String(profile.prescription).replace(/^医嘱：/, "")));
+  drawBlock("主诉", toCornerQuotes(stripDashes(profile.chief_complaint)));
+  drawBlock("医嘱", toCornerQuotes(stripDashes(String(profile.prescription).replace(/^医嘱：/, ""))));
 
   ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CARD_W - PAD, y); ctx.stroke();

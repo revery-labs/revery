@@ -46,3 +46,11 @@ export const ENNEAGRAM_HINTS = {
   "9w8": "都行型",
   "9w1": "你们定型",
 };
+
+// 渲染层去破折号：把 results.json 正文里的 U+2014（—/——）显示为逗号；
+// 若处于句尾（其后无更多正文）则显示为句号。results.json 原文不改，仅渲染时替换。
+export function stripDashes(s) {
+  return String(s).replace(/—+/g, (m, idx, str) =>
+    /^\s*$/.test(str.slice(idx + m.length)) ? "。" : "，"
+  );
+}
