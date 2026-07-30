@@ -36,9 +36,9 @@ const WING_FRAC = (1 / 9) * (1 / 2); // = 1/18
 const SIGN_FRAC = 1 / 12;
 
 function formatIncidence(pct) {
-  // pct 为百分比数值（如 0.05 表示 0.05%）。≥1% 一位小数；<1% 两位小数。
-  // 下限逻辑已移除（改人数口径后不再需要 0.02% 地板）。
-  return pct >= 1 ? pct.toFixed(1) : pct.toFixed(2);
+  // pct 为百分比数值（如 0.05 表示 0.05%）。
+  // 人数口径需三位有效数字，故 incidence 按三位有效数字存储；无下限。
+  return Number(pct.toPrecision(3)).toString();
 }
 
 function main() {
@@ -81,7 +81,7 @@ function main() {
       failures.push(`${key}: 既有字段被改动`);
     }
     if (!/^REV-\d{4}$/.test(case_id)) failures.push(`${key}: case_id 格式非法 (${case_id})`);
-    if (!/^\d+(\.\d{1,2})?$/.test(incidence)) failures.push(`${key}: incidence 格式非法 (${incidence})`);
+    if (!/^\d+(\.\d+)?$/.test(incidence)) failures.push(`${key}: incidence 格式非法 (${incidence})`);
   }
   // case_id 全局唯一
   const ids = keys.map((k) => enriched[k].case_id);
