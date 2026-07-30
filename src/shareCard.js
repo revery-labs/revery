@@ -9,7 +9,7 @@
 //   - incidence 改人数口径「每 N 人中 1 例」。
 //   - 确诊日期为渲染当日，不入 results.json，不参与"同组合逐字节一致"断言。
 // ─────────────────────────────────────────────────────────────────────────────
-import { COPY, stripDashes } from "./copy";
+import { COPY, toCorner } from "./copy";
 import { pickVerdict } from "./verdicts";
 
 const BG = "#101010";
@@ -60,18 +60,6 @@ function wrapLines(ctx, text, maxWidth) {
   }
   if (line) lines.push(line);
   return lines;
-}
-
-// 主诉/医嘱内双引号（U+0022 / U+201C / U+201D）统一显示为「」
-function toCornerQuotes(s) {
-  let open = true, out = "";
-  for (const ch of String(s)) {
-    if (ch === "“") out += "「";        // 左双引号 “
-    else if (ch === "”") out += "」";   // 右双引号 ”
-    else if (ch.charCodeAt(0) === 34) { out += open ? "「" : "」"; open = !open; } // 直双引号 U+0022
-    else out += ch;
-  }
-  return out;
 }
 
 // incidence(百分比字符串) → 人数口径「每 N 人中 1 例」的 N 显示串（三位有效数字）
@@ -172,8 +160,8 @@ export function drawShareCard(canvas, data) {
     for (const l of wrapLines(ctx, body, CW)) { ctx.fillText(l, PAD, y); y += 44; }
     y += 26;
   };
-  drawBlock("主诉", toCornerQuotes(stripDashes(profile.chief_complaint)));
-  drawBlock("医嘱", toCornerQuotes(stripDashes(String(profile.prescription).replace(/^医嘱：/, ""))));
+  drawBlock("主诉", toCorner(profile.chief_complaint));
+  drawBlock("医嘱", toCorner(String(profile.prescription).replace(/^医嘱：/, "")));
 
   ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CARD_W - PAD, y); ctx.stroke();
@@ -189,7 +177,7 @@ export function drawShareCard(canvas, data) {
   const people = incidenceToPeople(profile.incidence);
   ctx.font = `500 28px ${SANS}`;
   ctx.fillStyle = DIM;
-  ctx.fillText(people ? `全球约每${people}人中1例确诊` : "", PAD, y);
+  ctx.fillText(people ? `全球约每 ${people} 人中 1 例确诊` : "", PAD, y);
   y += 62;
 
   // 6｜恋爱脑浓度 / 理智留存 + 判词
@@ -215,7 +203,7 @@ export function drawShareCard(canvas, data) {
   if (profile.bgm && profile.bgm.song) {
     ctx.font = `500 26px ${SANS}`;
     ctx.fillStyle = FG;
-    ctx.fillText(`本病例BGM  ${profile.bgm.song} · ${profile.bgm.artist}`, PAD, y);
+    ctx.fillText(`本病例BGM  《${profile.bgm.song}》 · ${profile.bgm.artist}`, PAD, y);
     y += 46;
   }
 

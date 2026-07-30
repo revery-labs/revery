@@ -47,10 +47,11 @@ export const ENNEAGRAM_HINTS = {
   "9w1": "你们定型",
 };
 
-// 渲染层去破折号：把 results.json 正文里的 U+2014（—/——）显示为逗号；
-// 若处于句尾（其后无更多正文）则显示为句号。results.json 原文不改，仅渲染时替换。
-export function stripDashes(s) {
-  return String(s).replace(/—+/g, (m, idx, str) =>
-    /^\s*$/.test(str.slice(idx + m.length)) ? "。" : "，"
-  );
+// 渲染层引号：ASCII 双引号成对替换为「」（不配对的原样保留，不用状态机 toggle）；
+// 全角 “ ” 一并归一为「」。卡面与结果页共用同一实现。results.json 原文不改。
+export function toCorner(s) {
+  return String(s)
+    .replace(/"([^"]*)"/g, "「$1」")
+    .replace(/“/g, "「")
+    .replace(/”/g, "」");
 }
