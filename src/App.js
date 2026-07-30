@@ -138,7 +138,7 @@ const TX = {
     regName: "昵称", regEmail: "邮箱", regPw: "密码（至少6位）", regSubmit: "完成注册",
     regPrivacy: "我同意 Revery Labs 的", regPrivacyLink: "隐私政策及个人信息共享条款",
     paywallTitle: "对症下药", paywallSub: "医生，我还有得「救」嘛",
-    emailPH: "你的邮箱地址", emailSubmit: "排队候药", emailSuccess: "已挂号。", emailSuccessSub: "方子在熬，好了直接寄进你邮箱——先把病例发给那个和你一个病的人。", disclaimer: "仅供娱乐与自我反思参考 · 「如有雷同，说明你确实病了」",
+    emailPH: "你的邮箱地址", emailSubmit: "排队候药", emailSuccess: "已挂号。", emailSuccessSub: "方子在熬，好了直接寄进你邮箱，先把病例发给那个和你一个病的人。", disclaimer: "仅供娱乐与自我反思参考 · 「如有雷同，说明你确实病了」",
     loginBtn: "登入", loginTitle: "欢迎回来", loginSub: "登入你的账号继续使用",
     loginEmail: "邮箱", loginPw: "密码", loginSubmit: "登入",
     loginError: "邮箱或密码不正确，请重试", loginNoAcc: "还没有账号？完成测评并付费后注册",
