@@ -771,7 +771,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       { key: "analysis", label: t.reportAnalysis,    content: profile.analysis },
       { key: "profile",  label: t.reportSideProfile, content: profile.profile },
       { key: "rx",       label: t.reportRx,          content: profile.prescription },
-      { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `${profile.bgm.song} — ${profile.bgm.artist}` : null },
+      { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `${profile.bgm.song} · ${profile.bgm.artist}` : null },
     ];
 
     return (

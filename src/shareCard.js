@@ -74,19 +74,15 @@ function toCornerQuotes(s) {
   return out;
 }
 
-// incidence(百分比字符串) → 人数口径「每 N 人中 1 例」的 N 显示串
+// incidence(百分比字符串) → 人数口径「每 N 人中 1 例」的 N 显示串（三位有效数字）
 function incidenceToPeople(incidenceStr) {
   const pct = parseFloat(incidenceStr);
   if (!pct || pct <= 0) return null;
   let n = 100 / pct;                                   // = 1 / (pct/100)
-  const mag = Math.pow(10, Math.floor(Math.log10(n)) - 1);
-  n = Math.round(n / mag) * mag;                       // 两位有效数字
-  if (n >= 10000) {
-    const man = n / 10000;
-    return (Number.isInteger(man) ? String(man) : man.toFixed(1)) + "万";
-  }
-  const k = Math.round(n / 1000) * 1000;               // 千位取整
-  return String(k >= 1000 ? k : Math.round(n));
+  const mag = Math.pow(10, Math.floor(Math.log10(n)) - 2);
+  n = Math.round(n / mag) * mag;                       // 三位有效数字
+  if (n >= 10000) return String(Number((n / 10000).toFixed(2))) + "万"; // 万位以下同样三位有效
+  return String(n);
 }
 
 function todayStr() {
@@ -193,7 +189,7 @@ export function drawShareCard(canvas, data) {
   const people = incidenceToPeople(profile.incidence);
   ctx.font = `500 28px ${SANS}`;
   ctx.fillStyle = DIM;
-  ctx.fillText(people ? `全球约每 ${people} 人中 1 例确诊` : "", PAD, y);
+  ctx.fillText(people ? `全球约每${people}人中1例确诊` : "", PAD, y);
   y += 62;
 
   // 6｜恋爱脑浓度 / 理智留存 + 判词
@@ -219,7 +215,7 @@ export function drawShareCard(canvas, data) {
   if (profile.bgm && profile.bgm.song) {
     ctx.font = `500 26px ${SANS}`;
     ctx.fillStyle = FG;
-    ctx.fillText(`本病例BGM  ${profile.bgm.song} — ${profile.bgm.artist}`, PAD, y);
+    ctx.fillText(`本病例BGM  ${profile.bgm.song} · ${profile.bgm.artist}`, PAD, y);
     y += 46;
   }
 
