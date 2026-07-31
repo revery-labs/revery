@@ -62,15 +62,15 @@ function wrapLines(ctx, text, maxWidth) {
   return lines;
 }
 
-// incidence(百分比字符串) → 人数口径「每 N 人中 1 例」的 N 显示串（三位有效数字）
+// incidence(百分比字符串) → 「N 万人中」/「N,NNN 人中」段（三位有效数字；数字与单位间留空格，单位连写「人中」）
 function incidenceToPeople(incidenceStr) {
   const pct = parseFloat(incidenceStr);
   if (!pct || pct <= 0) return null;
   let n = 100 / pct;                                   // = 1 / (pct/100)
   const mag = Math.pow(10, Math.floor(Math.log10(n)) - 2);
   n = Math.round(n / mag) * mag;                       // 三位有效数字
-  if (n >= 10000) return String(Number((n / 10000).toFixed(2))) + "万"; // 万位以下同样三位有效
-  return String(n);
+  if (n >= 10000) return `${Number((n / 10000).toFixed(2))} 万人中`;  // 数字 空格 万人中（万人中连写）
+  return `${n.toLocaleString("en-US")} 人中`;                          // 千分位逗号 空格 人中
 }
 
 function todayStr() {
@@ -177,7 +177,7 @@ export function drawShareCard(canvas, data) {
   const people = incidenceToPeople(profile.incidence);
   ctx.font = `500 28px ${SANS}`;
   ctx.fillStyle = DIM;
-  ctx.fillText(people ? `全球约每 ${people} 人中 1 例确诊` : "", PAD, y);
+  ctx.fillText(people ? `全球约每 ${people} 1 例确诊` : "", PAD, y);
   y += 62;
 
   // 6｜恋爱脑浓度 / 理智留存 + 判词
