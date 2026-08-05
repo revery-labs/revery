@@ -725,13 +725,17 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     }
   }, [screen, profile, profileData]);
 
+  // 阶段1：样例默认折叠——每次结果组合(profileData)变化即无条件复位，与埋点去重解耦
+  useEffect(() => {
+    setSampleExpanded(false);
+  }, [profileData]);
+
   // 阶段1：深度处方样例区块曝光埋点，每个结果组合只报一次（与 view_result 同粒度）
   useEffect(() => {
     if (screen === "result" && profile && profileData) {
       const ck = comboKeyOf(profileData);
       if (sampleRxViewedRef.current !== ck) {
         sampleRxViewedRef.current = ck;
-        setSampleExpanded(false); // 换组合时样例收起
         logFunnelEvent("sample_rx_view");
       }
     }
@@ -756,6 +760,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     setEnneagram("");
     setZodiacIdx(-1);
     loggedResultRef.current = null;
+    sampleRxViewedRef.current = null;
+    setSampleExpanded(false);
   };
 
   const submitExisting = () => {
