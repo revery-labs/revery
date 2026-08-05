@@ -269,7 +269,7 @@ function pickBgm(mbti, enneaKey, signSlug, whitelistBySlug) {
 }
 
 // ─────────────────────────── 装配 ───────────────────────────
-function assembleAll({ subtypeByMbti, diseaseByEnnea, techniqueByMbti, hookBySlug }, whitelistBySlug, goldEntries) {
+function assembleAll({ subtypeByMbti, diseaseByEnnea, techniqueByMbti, hookBySlug }, whitelistBySlug, goldEntries, deepRx) {
   const results = {};
   for (const mbti of MBTI_LIST) {
     for (const enneaKey of ENNEA_LIST) {
@@ -278,6 +278,12 @@ function assembleAll({ subtypeByMbti, diseaseByEnnea, techniqueByMbti, hookBySlu
         const d = diseaseByEnnea[enneaKey];
         const metrics = computeMetrics(mbti, enneaKey, sign.slug);
         const gold = goldEntries[key];
+        // 深度处方：九型段 → MBTI 段 → 星座段，固定顺序，段间空行分隔。全格通用（含金标格）。
+        const deep_prescription = [
+          deepRx.ennSeg[enneaKey],
+          deepRx.mbtiSeg[mbti],
+          deepRx.signSeg[sign.slug],
+        ].join("\n\n");
 
         if (gold) {
           results[key] = {
@@ -288,6 +294,7 @@ function assembleAll({ subtypeByMbti, diseaseByEnnea, techniqueByMbti, hookBySlu
             analysis: gold.analysis,
             profile: gold.profile,
             prescription: gold.prescription,
+            deep_prescription,
             bgm: gold.bgm,
             lyric_line: null,
             metrics,
@@ -304,6 +311,7 @@ function assembleAll({ subtypeByMbti, diseaseByEnnea, techniqueByMbti, hookBySlu
             analysis,
             profile: d.profile,
             prescription: d.prescription,
+            deep_prescription,
             bgm,
             lyric_line: null,
             metrics,
@@ -420,18 +428,63 @@ function goldLockCheck(results, goldEntries) {
   return failures;
 }
 
+// ─────────────────────────── 解析 深度处方_定稿.md ───────────────────────────
+// 三层：九型层（型号做 ### 标题）/ MBTI 层（四字母）/ 星座层（中文星座名）。
+// 每段 = ### 标题行之后到下一个 ### 之间的正文（trim）。骨架期为 〔占位〕 单行。
+function parseDeepRx(text) {
+  const sectionBody = (startMark, endMark) => {
+    const from = text.indexOf(startMark);
+    if (from < 0) throw new Error(`深度处方_定稿：找不到章节「${startMark}」`);
+    const rest = text.slice(from + startMark.length);
+    const to = endMark ? rest.indexOf(endMark) : -1;
+    return to >= 0 ? rest.slice(0, to) : rest;
+  };
+  const parseBlocks = (body) => {
+    const map = {};
+    for (const block of body.split(/^### /m).slice(1)) {
+      const nl = block.indexOf("\n");
+      const headKey = (nl >= 0 ? block.slice(0, nl) : block).trim();
+      const segText = (nl >= 0 ? block.slice(nl + 1) : "").trim();
+      map[headKey] = segText;
+    }
+    return map;
+  };
+
+  const ennSeg = parseBlocks(sectionBody("## 一、", "## 二、"));
+  const mbtiSeg = parseBlocks(sectionBody("## 二、", "## 三、"));
+  const signCnSeg = parseBlocks(sectionBody("## 三、", null));
+
+  // 星座层中文名 → slug
+  const signSeg = {};
+  for (const [cn, seg] of Object.entries(signCnSeg)) {
+    const sign = SIGN_BY_CN[cn];
+    if (!sign) throw new Error(`深度处方_定稿：星座层标题无法识别：${cn}`);
+    signSeg[sign.slug] = seg;
+  }
+
+  for (const e of ENNEA_LIST) if (!ennSeg[e]) throw new Error(`深度处方_定稿：九型层缺少 ${e}`);
+  for (const m of MBTI_LIST) if (!mbtiSeg[m]) throw new Error(`深度处方_定稿：MBTI 层缺少 ${m}`);
+  for (const s of SIGN_LIST) if (!signSeg[s.slug]) throw new Error(`深度处方_定稿：星座层缺少 ${s.cn}`);
+
+  return { ennSeg, mbtiSeg, signSeg };
+}
+
 // ─────────────────────────── 主流程 ───────────────────────────
-function loadInputs() {
+function loadInputs(opts = {}) {
   const fourPieceText = readPipelineFile("四件套_定稿.md");
   const goldText = readPipelineFile("金标准_7条.md");
   const v1Text = readPipelineFile("规格包_v1.md");
+  const deepRxText = readPipelineFile("深度处方_定稿.md");
 
   assertNoPlaceholders("四件套_定稿.md", fourPieceText, "## 一、");
   assertNoPlaceholders("金标准_7条.md", goldText, "## 金标 #1");
+  // 深度处方骨架期为占位符；仅全量正式装配（deepStrict）才硬失败，试点模式放行以展示结构。
+  if (opts.deepStrict) assertNoPlaceholders("深度处方_定稿.md", deepRxText, "## 一、");
 
   const fourPiece = parseFourPiece(fourPieceText);
   const whitelistBySlug = parseBgmWhitelist(v1Text);
   const goldEntries = parseGoldStandard(goldText);
+  const deepRx = parseDeepRx(deepRxText);
 
   // 金标 BGM 自动并入对应星座白名单（规则 5）
   for (const key of GOLD_KEYS) {
@@ -442,12 +495,12 @@ function loadInputs() {
     }
   }
 
-  return { fourPiece, whitelistBySlug, goldEntries };
+  return { fourPiece, whitelistBySlug, goldEntries, deepRx };
 }
 
-function buildOnce() {
-  const { fourPiece, whitelistBySlug, goldEntries } = loadInputs();
-  const results = assembleAll(fourPiece, whitelistBySlug, goldEntries);
+function buildOnce(opts = {}) {
+  const { fourPiece, whitelistBySlug, goldEntries, deepRx } = loadInputs(opts);
+  const results = assembleAll(fourPiece, whitelistBySlug, goldEntries, deepRx);
   return { results, fourPiece, goldEntries };
 }
 
@@ -464,14 +517,14 @@ function runPilot() {
 }
 
 function runFull() {
-  const { results, fourPiece, goldEntries } = buildOnce();
+  const { results, fourPiece, goldEntries } = buildOnce({ deepStrict: true });
 
   const { failures, diffs } = validate(results, { diseaseByEnnea: fourPiece.diseaseByEnnea, goldEntries });
   const lockFailures = goldLockCheck(results, goldEntries);
   const allFailures = [...failures, ...lockFailures];
 
   // 7. 确定性门：再跑一次，逐字节比对
-  const { results: results2 } = buildOnce();
+  const { results: results2 } = buildOnce({ deepStrict: true });
   const same = JSON.stringify(results) === JSON.stringify(results2);
   if (!same) allFailures.push({ gate: 7, key: "-", reason: "两次生成结果不完全一致（存在非确定性来源）" });
 
@@ -529,9 +582,34 @@ function runFull() {
   console.log(`全部校验门通过。已写出 ${path.relative(ROOT, OUT_JSON)}（${Object.keys(results).length} 键）与 ${path.relative(ROOT, OUT_REPORT)}`);
 }
 
+// 深度处方试点：只导出一个格子的 deep_prescription 到临时文件供人工审阅，绝不写 results.json。
+// 骨架期正文为占位符，此模式验证的是三层拼接结构（顺序/分段/映射），不验证正文。
+function runDeepRxPilot() {
+  const key = process.argv[3] || "INTJ_3w4_scorpio";
+  const { results } = buildOnce({ deepStrict: false });
+  const entry = results[key];
+  if (!entry) throw new Error(`试点键不存在：${key}`);
+  const outPath = path.join(PIPELINE, `深度处方_试点_${key}.txt`);
+  const segs = entry.deep_prescription.split("\n\n");
+  const body =
+    `# 深度处方试点 · ${key}\n` +
+    `# 生成：${new Date().toISOString()}（不写入 results.json）\n` +
+    `# mbti=${entry.mbti}  enneagram=${entry.enneagram}  sign=${entry.sign}  review_status=${entry.review_status}\n` +
+    `# 段数：${segs.length}（期望 3：九型→MBTI→星座）\n` +
+    `# ─────────────────────────────────────────────\n\n` +
+    entry.deep_prescription + "\n";
+  fs.writeFileSync(outPath, body, "utf8");
+  console.log(`已写出试点：${path.relative(ROOT, outPath)}`);
+  console.log(`段数：${segs.length}（期望 3）`);
+  console.log("─".repeat(46));
+  console.log(entry.deep_prescription);
+}
+
 const mode = process.argv[2];
 if (mode === "--pilot") {
   runPilot();
+} else if (mode === "--deeprx-pilot") {
+  runDeepRxPilot();
 } else {
   runFull();
 }

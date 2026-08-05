@@ -19,6 +19,14 @@ const crypto = require("crypto");
 
 const JSON_PATH = path.resolve(__dirname, "..", "src", "data", "results.json");
 
+// ── deep_prescription guard 用常量（镜像 assemble.js 的同名列表）──────────────────
+// 深度处方为全格通用的新字段（含金标格），非金标正文，故黑名单/禁令词对其一律生效，无豁免。
+const BLACKLIST = ["橙月","Gibson","凌晨三点半","九十秒","记录都留着","heels","跳舞","春暖花开","The Moment Is Over","蓝花楹","大西洋","黑胶"];
+const BANNED_WORDS = ["放下","爱自己","成长","值得被爱","回避型依恋"];
+// 总字数区间：九型(300–400) + MBTI(120–180) + 星座(80–120) = 500–700。
+const DEEP_MIN = 500;
+const DEEP_MAX = 700;
+
 // ── MBTI 人群分布估计（来源：MBTI Manual / CAPT 常见流通估计，百分比）─────────────
 // 说明/假设：公开流通的近似值，脚本内归一化后使用；本字段为装饰性，确定性 > 精确性。
 const MBTI_DIST_RAW = {
@@ -82,6 +90,23 @@ function main() {
     }
     if (!/^REV-\d{4}$/.test(case_id)) failures.push(`${key}: case_id 格式非法 (${case_id})`);
     if (!/^\d+(\.\d+)?$/.test(incidence)) failures.push(`${key}: incidence 格式非法 (${incidence})`);
+
+    // 深度处方 guard（阶段1新增）：字段存在 / 三段齐全 / 总字数区间 / 黑名单 / 禁令词。
+    const dp = enriched[key].deep_prescription;
+    if (typeof dp !== "string" || !dp.trim()) {
+      failures.push(`${key}: deep_prescription 缺失或为空`);
+    } else {
+      const segs = dp.split("\n\n").map((s) => s.trim()).filter(Boolean);
+      if (segs.length !== 3) failures.push(`${key}: deep_prescription 段数=${segs.length}（期望 3）`);
+      const total = segs.reduce((a, s) => a + [...s].length, 0);
+      if (total < DEEP_MIN || total > DEEP_MAX) {
+        failures.push(`${key}: deep_prescription 总字数=${total}（期望 ${DEEP_MIN}–${DEEP_MAX}）`);
+      }
+      const hitB = BLACKLIST.filter((w) => dp.includes(w));
+      if (hitB.length) failures.push(`${key}: deep_prescription 命中黑名单「${hitB.join("、")}」`);
+      const hitW = BANNED_WORDS.filter((w) => dp.includes(w));
+      if (hitW.length) failures.push(`${key}: deep_prescription 命中禁令词「${hitW.join("、")}」`);
+    }
   }
   // case_id 全局唯一
   const ids = keys.map((k) => enriched[k].case_id);
@@ -105,6 +130,7 @@ function main() {
   console.log(`  键数：${keys.length}（期望 3456）`);
   console.log(`  case_id 唯一：${uniq.size}/${ids.length}`);
   console.log(`  既有字段零改动：全部 ${keys.length} 键通过`);
+  console.log(`  深度处方 guard：全部 ${keys.length} 键通过（三段齐全 / 字数 ${DEEP_MIN}–${DEEP_MAX} / 黑名单 / 禁令词）`);
   console.log(`  金标准(human)正文零改动：${goldKeys.length} 格通过`);
   console.log(`  incidence 范围：${Math.min(...keys.map(k=>parseFloat(enriched[k].incidence)))} – ${Math.max(...keys.map(k=>parseFloat(enriched[k].incidence)))} (%)`);
   console.log("  样例：");
