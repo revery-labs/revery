@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
-import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
+import { COPY, ENNEAGRAM_HINTS, toCorner, SAMPLE_DEEP_RX_PLACEHOLDER } from "./copy";
 import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -690,6 +690,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [shareImg,      setShareImg]      = useState(null);
   const shareCanvasRef = useRef(null);
   const shareSavedRef  = useRef(false); // share_save 每次打开只报一次
+  const [sampleExpanded, setSampleExpanded] = useState(false); // 深度处方样例展开态
+  const sampleRxViewedRef = useRef(null);   // sample_rx_view 每个结果组合只报一次
 
   // 查表键构造（与埋点 combo_key 同源，逐字节一致）
   const comboKeyOf = (pd) => {
@@ -719,6 +721,18 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       if (loggedResultRef.current !== ck) {
         loggedResultRef.current = ck;
         logFunnelEvent("view_result", { combo_key: ck });
+      }
+    }
+  }, [screen, profile, profileData]);
+
+  // 阶段1：深度处方样例区块曝光埋点，每个结果组合只报一次（与 view_result 同粒度）
+  useEffect(() => {
+    if (screen === "result" && profile && profileData) {
+      const ck = comboKeyOf(profileData);
+      if (sampleRxViewedRef.current !== ck) {
+        sampleRxViewedRef.current = ck;
+        setSampleExpanded(false); // 换组合时样例收起
+        logFunnelEvent("sample_rx_view");
       }
     }
   }, [screen, profile, profileData]);
@@ -774,6 +788,15 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `《${profile.bgm.song}》 · ${profile.bgm.artist}` : null },
     ];
 
+    // 阶段1 深度处方样例：固定取 INTJ_3w4_scorpio；正文回填全量重跑前读不到 deep_prescription，
+    // 回退到占位正文（case_id 仍取真值，确定性）。
+    const SAMPLE_KEY = "INTJ_3w4_scorpio";
+    const sampleProfile = RESULTS[SAMPLE_KEY];
+    const sampleCaseId = (sampleProfile && sampleProfile.case_id) || "XXXX";
+    const sampleDeepRaw = (sampleProfile && sampleProfile.deep_prescription) || SAMPLE_DEEP_RX_PLACEHOLDER;
+    const sampleParas = String(sampleDeepRaw).split("\n\n").map((s) => s.trim()).filter(Boolean);
+    const sampleShown = sampleExpanded ? sampleParas : sampleParas.slice(0, 2);
+
     return (
       <>
       <div style={{
@@ -807,7 +830,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               </svg>
             </div>
             <div style={{ position: "relative", textAlign: "center", marginBottom: 4 }}>
-              <div style={{ fontSize: "clamp(22px, 6vw, 34px)", fontWeight: 900, color: REPORT_PRIMARY, lineHeight: 1.15, fontFamily: SERIF_CJK }}>{profile.disease}（{profile.subtype}）</div>
+              <div style={{ fontSize: "clamp(22px, 6vw, 34px)", fontWeight: 900, color: REPORT_PRIMARY, lineHeight: 1.15, fontFamily: SERIF_CJK, padding: "0 clamp(60px, 18vw, 80px) 0 0" }}>{profile.disease}（{profile.subtype}）</div>
               <div style={{ position: "absolute", top: -10, right: 2, transform: "rotate(11deg)", border: `2.6px solid ${REPORT_RED}`, color: REPORT_RED, borderRadius: 10, fontSize: 13, fontWeight: 800, letterSpacing: "0.12em", padding: "4px 9px", background: REPORT_BG, fontFamily: MONO }}>{t.reportStamp}</div>
             </div>
             {/* Seal stamp (decorative watermark, neutral — red reserved for stamp/buttons/footer only) */}
@@ -838,6 +861,30 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               <div style={{ fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: serif ? SERIF_CJK : SANS, lineHeight: 1.75 }}>{content}</div>
             </div>
           ) : null)}
+
+          {/* 阶段1 深度处方 · 用户本人格：只保留一句状态提示，正文不渲染（付费墙后交付）；病名/亚型顶部已有 */}
+          <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "14px 18px" }}>
+            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>深度处方</div>
+            <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6 }}>{COPY.deepRxQueued}</div>
+          </div>
+
+          {/* 阶段1 深度处方样例：固定渲染 INTJ_3w4_scorpio 前两段 + 渐隐遮罩；展开看完整样例 */}
+          <div style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "14px 18px" }}>
+            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>样例 · 病例 {sampleCaseId}</div>
+            <div style={{ position: "relative" }}>
+              {sampleShown.map((p, i) => (
+                <p key={i} style={{ fontSize: "clamp(15px, 3.6vw, 17px)", color: REPORT_PRIMARY, fontFamily: SERIF_CJK, lineHeight: 1.75, margin: "0 0 12px" }}>{p}</p>
+              ))}
+              {!sampleExpanded && (
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 96, pointerEvents: "none", background: `linear-gradient(to bottom, rgba(16,16,16,0), ${REPORT_BG})` }} />
+              )}
+            </div>
+            {!sampleExpanded && (
+              <button onClick={() => { setSampleExpanded(true); logFunnelEvent("sample_rx_expand"); }}
+                style={{ marginTop: 10, width: "100%", padding: "10px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: SANS, letterSpacing: "0.06em" }}
+              >展开看完整样例</button>
+            )}
+          </div>
 
           <div style={{ marginTop: 16, textAlign: "center", fontSize: "clamp(19px, 2vw, 20px)", fontWeight: 700, color: REPORT_RED, fontFamily: SERIF_CJK, letterSpacing: "0.02em", lineHeight: 1.5, whiteSpace: isMobile ? "normal" : "nowrap" }}>{t.reportFooter}</div>
 
