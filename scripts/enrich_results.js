@@ -26,6 +26,8 @@ const BANNED_WORDS = ["放下","爱自己","成长","值得被爱","回避型依
 // 总字数区间：九型(300–400) + MBTI(120–180) + 星座(80–120) = 500–700。
 const DEEP_MIN = 500;
 const DEEP_MAX = 700;
+// 层间哨兵（须与 assemble.js 的 join 分隔符一致）；恰好出现 2 次分三层。
+const DEEP_SEP = "%%LAYER%%";
 
 // ── MBTI 人群分布估计（来源：MBTI Manual / CAPT 常见流通估计，百分比）─────────────
 // 说明/假设：公开流通的近似值，脚本内归一化后使用；本字段为装饰性，确定性 > 精确性。
@@ -91,14 +93,19 @@ function main() {
     if (!/^REV-\d{4}$/.test(case_id)) failures.push(`${key}: case_id 格式非法 (${case_id})`);
     if (!/^\d+(\.\d+)?$/.test(incidence)) failures.push(`${key}: incidence 格式非法 (${incidence})`);
 
-    // 深度处方 guard（阶段1新增）：字段存在 / 三段齐全 / 总字数区间 / 黑名单 / 禁令词。
+    // 深度处方 guard（阶段1新增）：字段存在 / 分隔符恰 2 次 / 恰 3 层且各层非空 /
+    // 总字数区间（排除分隔符与空白）/ 黑名单 / 禁令词。层间哨兵为 %%LAYER%%。
     const dp = enriched[key].deep_prescription;
     if (typeof dp !== "string" || !dp.trim()) {
       failures.push(`${key}: deep_prescription 缺失或为空`);
     } else {
-      const segs = dp.split("\n\n").map((s) => s.trim()).filter(Boolean);
-      if (segs.length !== 3) failures.push(`${key}: deep_prescription 段数=${segs.length}（期望 3）`);
-      const total = segs.reduce((a, s) => a + [...s].length, 0);
+      const sepCount = dp.split(DEEP_SEP).length - 1;
+      if (sepCount !== 2) failures.push(`${key}: deep_prescription 分隔符 %%LAYER%% 出现 ${sepCount} 次（期望 2）`);
+      const layers = dp.split(DEEP_SEP).map((s) => s.trim());
+      if (layers.length !== 3) failures.push(`${key}: deep_prescription 层数=${layers.length}（期望 3）`);
+      if (layers.some((l) => !l)) failures.push(`${key}: deep_prescription 存在空层`);
+      // 总字数：三层去空白之和（自然排除分隔符本身与所有空白）
+      const total = layers.reduce((a, l) => a + [...l.replace(/\s/g, "")].length, 0);
       if (total < DEEP_MIN || total > DEEP_MAX) {
         failures.push(`${key}: deep_prescription 总字数=${total}（期望 ${DEEP_MIN}–${DEEP_MAX}）`);
       }
@@ -130,7 +137,7 @@ function main() {
   console.log(`  键数：${keys.length}（期望 3456）`);
   console.log(`  case_id 唯一：${uniq.size}/${ids.length}`);
   console.log(`  既有字段零改动：全部 ${keys.length} 键通过`);
-  console.log(`  深度处方 guard：全部 ${keys.length} 键通过（三段齐全 / 字数 ${DEEP_MIN}–${DEEP_MAX} / 黑名单 / 禁令词）`);
+  console.log(`  深度处方 guard：全部 ${keys.length} 键通过（三层齐全·%%LAYER%%×2 / 字数 ${DEEP_MIN}–${DEEP_MAX} / 黑名单 / 禁令词）`);
   console.log(`  金标准(human)正文零改动：${goldKeys.length} 格通过`);
   console.log(`  incidence 范围：${Math.min(...keys.map(k=>parseFloat(enriched[k].incidence)))} – ${Math.max(...keys.map(k=>parseFloat(enriched[k].incidence)))} (%)`);
   console.log("  样例：");

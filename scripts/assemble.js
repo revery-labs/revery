@@ -278,12 +278,14 @@ function assembleAll({ subtypeByMbti, diseaseByEnnea, techniqueByMbti, hookBySlu
         const d = diseaseByEnnea[enneaKey];
         const metrics = computeMetrics(mbti, enneaKey, sign.slug);
         const gold = goldEntries[key];
-        // 深度处方：九型段 → MBTI 段 → 星座段，固定顺序，段间空行分隔。全格通用（含金标格）。
+        // 深度处方：九型段 → MBTI 段 → 星座段，固定顺序。
+        // 层间用哨兵 %%LAYER%% 分隔（层内自然段的空行原样保留，故不能用 \n\n 当层界）。
+        // 渲染层与 enrich guard 均按 %%LAYER%% 切三层；分隔符绝不进入用户可见文本。
         const deep_prescription = [
           deepRx.ennSeg[enneaKey],
           deepRx.mbtiSeg[mbti],
           deepRx.signSeg[sign.slug],
-        ].join("\n\n");
+        ].join("\n\n%%LAYER%%\n\n");
 
         if (gold) {
           results[key] = {
@@ -590,17 +592,20 @@ function runDeepRxPilot() {
   const entry = results[key];
   if (!entry) throw new Error(`试点键不存在：${key}`);
   const outPath = path.join(PIPELINE, `深度处方_试点_${key}.txt`);
-  const segs = entry.deep_prescription.split("\n\n");
+  const SEP = "%%LAYER%%";
+  const layers = entry.deep_prescription.split(SEP).map((s) => s.trim());
+  const sepCount = entry.deep_prescription.split(SEP).length - 1;
   const body =
     `# 深度处方试点 · ${key}\n` +
     `# 生成：${new Date().toISOString()}（不写入 results.json）\n` +
     `# mbti=${entry.mbti}  enneagram=${entry.enneagram}  sign=${entry.sign}  review_status=${entry.review_status}\n` +
-    `# 段数：${segs.length}（期望 3：九型→MBTI→星座）\n` +
+    `# 层数：${layers.length}（期望 3：九型→MBTI→星座）  分隔符 %%LAYER%% 次数：${sepCount}（期望 2）\n` +
+    `# 各层非空：${layers.every((l) => l) ? "是" : "否"}\n` +
     `# ─────────────────────────────────────────────\n\n` +
     entry.deep_prescription + "\n";
   fs.writeFileSync(outPath, body, "utf8");
   console.log(`已写出试点：${path.relative(ROOT, outPath)}`);
-  console.log(`段数：${segs.length}（期望 3）`);
+  console.log(`层数：${layers.length}（期望 3）  分隔符 %%LAYER%% 次数：${sepCount}（期望 2）  各层非空：${layers.every((l) => l) ? "是" : "否"}`);
   console.log("─".repeat(46));
   console.log(entry.deep_prescription);
 }

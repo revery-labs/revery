@@ -794,8 +794,13 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     const sampleProfile = RESULTS[SAMPLE_KEY];
     const sampleCaseId = (sampleProfile && sampleProfile.case_id) || "XXXX";
     const sampleDeepRaw = (sampleProfile && sampleProfile.deep_prescription) || SAMPLE_DEEP_RX_PLACEHOLDER;
-    const sampleParas = String(sampleDeepRaw).split("\n\n").map((s) => s.trim()).filter(Boolean);
-    const sampleShown = sampleExpanded ? sampleParas : sampleParas.slice(0, 2);
+    // 先按 %%LAYER%% 切三层（分隔符绝不进入可见文本），层内再按空行拆自然段
+    const sampleLayers = String(sampleDeepRaw).split("%%LAYER%%").map((s) => s.trim()).filter(Boolean);
+    const toParas = (layer) => layer.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+    const sampleFirstLayerParas = sampleLayers.length ? toParas(sampleLayers[0]) : [];
+    const sampleAllParas = sampleLayers.flatMap(toParas);
+    // 折叠态＝第一层的前两个自然段；展开态＝全部层的自然段（均已剥离分隔符）
+    const sampleShown = sampleExpanded ? sampleAllParas : sampleFirstLayerParas.slice(0, 2);
 
     return (
       <>
