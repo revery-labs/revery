@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
-import { COPY, ENNEAGRAM_HINTS, toCorner, SAMPLE_DEEP_RX_PLACEHOLDER } from "./copy";
+import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
 import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -794,12 +794,12 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `《${profile.bgm.song}》 · ${profile.bgm.artist}` : null },
     ];
 
-    // 阶段1 深度处方样例：固定取 INTJ_3w4_scorpio；正文回填全量重跑前读不到 deep_prescription，
-    // 回退到占位正文（case_id 仍取真值，确定性）。
+    // 阶段1 深度处方样例：固定取 INTJ_3w4_scorpio 的真正文（已全量落库）。
+    // 取不到 deep_prescription、或切不出恰好 3 层，则整块不渲染（不显示占位/空框）。
     const SAMPLE_KEY = "INTJ_3w4_scorpio";
     const sampleProfile = RESULTS[SAMPLE_KEY];
     const sampleCaseId = (sampleProfile && sampleProfile.case_id) || "XXXX";
-    const sampleDeepRaw = (sampleProfile && sampleProfile.deep_prescription) || SAMPLE_DEEP_RX_PLACEHOLDER;
+    const sampleDeepRaw = sampleProfile && sampleProfile.deep_prescription;
     // 先按 %%LAYER%% 切三层（分隔符绝不进入可见文本），层内再按空行拆自然段
     const sampleLayers = String(sampleDeepRaw).split("%%LAYER%%").map((s) => s.trim()).filter(Boolean);
     const toParas = (layer) => layer.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
@@ -807,6 +807,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     const sampleAllParas = sampleLayers.flatMap(toParas);
     // 折叠态＝第一层的前两个自然段；展开态＝全部层的自然段（均已剥离分隔符）
     const sampleShown = sampleExpanded ? sampleAllParas : sampleFirstLayerParas.slice(0, 2);
+    const showSample = sampleLayers.length === 3; // 切不出恰好 3 层（含取不到正文）则整块不渲染
 
     return (
       <>
@@ -879,7 +880,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6 }}>{COPY.deepRxQueued}</div>
           </div>
 
-          {/* 阶段1 深度处方样例：固定渲染 INTJ_3w4_scorpio 前两段 + 渐隐遮罩；展开看完整样例 */}
+          {/* 阶段1 深度处方样例：正文取不到或切不出 3 层则整块不渲染（不显示占位/空框）；展开看完整样例 */}
+          {showSample && (
           <div style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "14px 18px" }}>
             <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>样例 · 病例 {sampleCaseId}</div>
             <div style={{ position: "relative" }}>
@@ -896,6 +898,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               >展开看完整样例</button>
             )}
           </div>
+          )}
 
           <div style={{ marginTop: 16, textAlign: "center", fontSize: "clamp(19px, 2vw, 20px)", fontWeight: 700, color: REPORT_RED, fontFamily: SERIF_CJK, letterSpacing: "0.02em", lineHeight: 1.5, whiteSpace: isMobile ? "normal" : "nowrap" }}>{t.reportFooter}</div>
 
