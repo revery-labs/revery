@@ -794,19 +794,17 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       { key: "bgm",      label: "本病例BGM",         content: profile.bgm ? `《${profile.bgm.song}》 · ${profile.bgm.artist}` : null },
     ];
 
-    // 阶段1 深度处方样例：固定取 INTJ_3w4_scorpio 的真正文（已全量落库）。
-    // 取不到 deep_prescription、或切不出恰好 3 层，则整块不渲染（不显示占位/空框）。
-    const SAMPLE_KEY = "INTJ_3w4_scorpio";
-    const sampleProfile = RESULTS[SAMPLE_KEY];
+    // 阶段1 深度处方：渲染用户自己的组合（profile 与 case_id 均取本人）。取不到正文或切不出恰好 3 层则整块不渲染。
+    const SAMPLE_KEY = comboKeyOf(profileData);
+    const sampleProfile = RESULTS[SAMPLE_KEY] || profile;
     const sampleCaseId = (sampleProfile && sampleProfile.case_id) || "XXXX";
     const sampleDeepRaw = sampleProfile && sampleProfile.deep_prescription;
     // 先按 %%LAYER%% 切三层（分隔符绝不进入可见文本），层内再按空行拆自然段
     const sampleLayers = String(sampleDeepRaw).split("%%LAYER%%").map((s) => s.trim()).filter(Boolean);
     const toParas = (layer) => layer.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
     const sampleFirstLayerParas = sampleLayers.length ? toParas(sampleLayers[0]) : [];
-    const sampleAllParas = sampleLayers.flatMap(toParas);
-    // 折叠态＝第一层的前两个自然段；展开态＝全部层的自然段（均已剥离分隔符）
-    const sampleShown = sampleExpanded ? sampleAllParas : sampleFirstLayerParas.slice(0, 2);
+    // 折叠态＝第一层前两段；展开态＝第一层其余自然段（MBTI/星座层为墙后内容，不渲染）
+    const sampleShown = sampleExpanded ? sampleFirstLayerParas : sampleFirstLayerParas.slice(0, 2);
     const showSample = sampleLayers.length === 3; // 切不出恰好 3 层（含取不到正文）则整块不渲染
 
     return (
@@ -874,16 +872,10 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             </div>
           ) : null)}
 
-          {/* 阶段1 深度处方 · 用户本人格：只保留一句状态提示，正文不渲染（付费墙后交付）；病名/亚型顶部已有 */}
-          <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "14px 18px" }}>
-            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>深度处方</div>
-            <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6 }}>{COPY.deepRxQueued}</div>
-          </div>
-
-          {/* 阶段1 深度处方样例：正文取不到或切不出 3 层则整块不渲染（不显示占位/空框）；展开看完整样例 */}
+          {/* 阶段1 深度处方（用户本人格）：折叠＝第一层前两段+渐隐+按钮；展开＝第一层其余段；MBTI/星座层墙后不渲染。切不出 3 层则整块不渲染 */}
           {showSample && (
-          <div style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "14px 18px" }}>
-            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>样例 · 病例 {sampleCaseId}</div>
+          <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "14px 18px" }}>
+            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>深度处方 · 病例 {sampleCaseId}</div>
             <div style={{ position: "relative" }}>
               {sampleShown.map((p, i) => (
                 <p key={i} style={{ fontSize: "clamp(15px, 3.6vw, 17px)", color: REPORT_PRIMARY, fontFamily: SERIF_CJK, lineHeight: 1.75, margin: "0 0 12px" }}>{p}</p>
@@ -895,7 +887,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             {!sampleExpanded && (
               <button onClick={() => { setSampleExpanded(true); logFunnelEvent("sample_rx_expand"); }}
                 style={{ marginTop: 10, width: "100%", padding: "10px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: SANS, letterSpacing: "0.06em" }}
-              >展开看完整样例</button>
+              >展开看完整</button>
             )}
           </div>
           )}
