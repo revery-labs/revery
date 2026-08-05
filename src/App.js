@@ -1842,7 +1842,9 @@ export default function App() {
   };
 
   return (
-    <div style={{ height: "100dvh", minHeight: "100vh", display: "flex", flexDirection: "column", background: th.bg, color: th.text, fontFamily: SANS, overflow: "hidden" }}>
+    <div className="revery-app-root" style={{ display: "flex", flexDirection: "column", background: th.bg, color: th.text, fontFamily: SANS, overflow: "hidden" }}>
+      {/* 高度用 CSS 两行覆盖：不支持 dvh 的浏览器用 100vh 打底，支持的用 100dvh（避免 iOS 100vh 撑高导致底部区块被工具栏遮住）*/}
+      <style>{`.revery-app-root{height:100vh;height:100dvh;}`}</style>
       <Header
         page={page} onNavChange={handleNavChange}
         dark={dark} setDark={setDark}
