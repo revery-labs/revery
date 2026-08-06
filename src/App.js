@@ -975,6 +975,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
       {/* 2.2/2.3 分享卡模态 */}
       <Modal show={showShareCard} onClose={() => setShowShareCard(false)} th={th}>
+        <div style={{ position: "relative" }}>
+        {/* 关闭入口：固定在模态容器右上角、不随内容滚动、44×44 触摸目标、非红；点遮罩关闭逻辑保留 */}
+        <button onClick={() => setShowShareCard(false)} aria-label="关闭"
+          style={{ position: "absolute", top: -10, right: -14, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", color: REPORT_SECONDARY, fontSize: 26, lineHeight: 1, cursor: "pointer", padding: 0, zIndex: 2 }}
+        >×</button>
         <div style={{ fontFamily: SANS, fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 4, textAlign: "center" }}>分享病例卡</div>
         <div style={{ fontFamily: SANS, fontSize: 12, color: REPORT_SECONDARY, marginBottom: 12, textAlign: "center", lineHeight: 1.6 }}>称呼可留空；留空则用你的类型代号。仅用于卡面，不上传、不入库。</div>
         <input type="text" value={patientName} maxLength={12}
@@ -997,6 +1002,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             >桌面端点此下载图片</a>
           </div>
         )}
+        </div>
       </Modal>
       </>
     );
