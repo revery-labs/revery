@@ -4,6 +4,7 @@ import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveI
 import RESULTS from "./data/results.json";
 import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
 import { nextWindowForSign } from "./astro";
+import { lookupCompat } from "./compat";
 import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -682,6 +683,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [payEmail,    setPayEmail]   = useState("");
   const [payEmailSent, setPayEmailSent] = useState(false);
   const [rxRemindOptIn, setRxRemindOptIn] = useState(false); // 阶段2「到期提醒我复诊」复选框，默认不勾选
+  const [compatMbti, setCompatMbti] = useState("");          // 阶段3 合盘：对方 MBTI
+  const [compatZodiacIdx, setCompatZodiacIdx] = useState(-1); // 阶段3 合盘：对方星座
   const [mbti,        setMbti]       = useState("");
   const [enneagram,   setEnneagram]  = useState("");
   const [zodiacIdx,   setZodiacIdx]  = useState(-1);
@@ -694,6 +697,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const shareSavedRef  = useRef(false); // share_save 每次打开只报一次
   const [sampleExpanded, setSampleExpanded] = useState(false); // 深度处方样例展开态
   const sampleRxViewedRef = useRef(null);   // sample_rx_view 每个结果组合只报一次
+  const compatScrollRef   = useRef(null);   // 阶段3 合盘结果滚动容器，进入时归零 scrollTop
 
   // 查表键构造（与埋点 combo_key 同源，逐字节一致）
   const comboKeyOf = (pd) => {
@@ -734,6 +738,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     setPayEmail("");
   }, [profileData]);
 
+  // 阶段3：进入合盘结果页时把滚动容器归零（独立 ref、独立 effect）
+  useEffect(() => {
+    if (screen === "compat_result" && compatScrollRef.current) compatScrollRef.current.scrollTop = 0;
+  }, [screen]);
+
   // 阶段1：深度处方样例区块曝光埋点，每个结果组合只报一次（与 view_result 同粒度）
   useEffect(() => {
     if (screen === "result" && profile && profileData) {
@@ -771,6 +780,13 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     setPayEmail("");
     setPatientName("");
     setShareImg(null);
+  };
+
+  // 阶段3：退出合盘、回到单人结果页，并清空对方 MBTI/星座输入（不跨会话保留）
+  const exitCompat = () => {
+    setScreen("result");
+    setCompatMbti("");
+    setCompatZodiacIdx(-1);
   };
 
   const submitExisting = () => {
@@ -965,6 +981,13 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
           >生成分享病例卡</button>
 
+          {/* 阶段3 合盘入口（位置与文案先用占位）·描边样式，不占红色名额 */}
+          <button onClick={() => { setScreen("compat_input"); logFunnelEvent("compat_input_view"); }}
+            style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+          >〔占位〕和 TA 合盘看看</button>
+
           <button onClick={retake}
             style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
@@ -1007,6 +1030,130 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       </>
     );
   } // end result
+
+  // ── 阶段3 合盘·第二输入屏（只填对方 MBTI + 对方星座；不改第一输入屏逻辑）──────────
+  if (screen === "compat_input" && profile) {
+    const compatMbtiValid = MBTI_OPTIONS.includes(compatMbti);
+    const compatSignValid = compatZodiacIdx >= 0;
+    const canCompatSubmit = compatMbtiValid && compatSignValid; // 两字段都必填
+    const cField = (active) => ({
+      width: "100%", boxSizing: "border-box",
+      background: REPORT_BG, border: `1px solid ${active ? REPORT_PRIMARY : REPORT_BORDER}`,
+      borderRadius: 6, padding: "11px 14px", color: REPORT_PRIMARY,
+      fontSize: 16, fontFamily: SANS, outline: "none", appearance: "none", cursor: "pointer", transition: "border-color 0.2s",
+    });
+    return (
+      <div style={{
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", background: REPORT_BG,
+        padding: `calc(80px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left))`,
+      }}>
+        <div style={{ width: "100%", maxWidth: 400 }}>
+          <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 6 }}>〔占位〕合盘</div>
+          <div style={{ fontSize: 13, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, marginBottom: 24 }}>〔占位文案〕只填对方的 MBTI 与星座；对方九型不需要。</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>对方 MBTI</div>
+              <select value={compatMbti} onChange={(e) => setCompatMbti(e.target.value)}
+                style={{ ...cField(compatMbtiValid), color: compatMbti ? REPORT_PRIMARY : REPORT_SECONDARY }}>
+                <option value=""></option>
+                {MBTI_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>对方星座</div>
+              <select value={compatZodiacIdx} onChange={(e) => setCompatZodiacIdx(parseInt(e.target.value))}
+                style={{ ...cField(false), color: compatZodiacIdx >= 0 ? REPORT_PRIMARY : REPORT_SECONDARY }}>
+                <option value={-1}></option>
+                {t.zodiacs.map((z, i) => <option key={i} value={i}>{z}</option>)}
+              </select>
+            </div>
+            <button onClick={() => { if (!canCompatSubmit) return; logFunnelEvent("compat_submit"); setScreen("compat_result"); }} disabled={!canCompatSubmit}
+              style={{ width: "100%", padding: "13px 0", marginTop: 8, background: canCompatSubmit ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 7, color: canCompatSubmit ? REPORT_PRIMARY : REPORT_SECONDARY, fontSize: 16, cursor: canCompatSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em", transition: "background 0.2s" }}>
+              〔占位〕生成合盘
+            </button>
+            <button onClick={exitCompat}
+              style={{ width: "100%", padding: "11px 0", marginTop: 4, background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em" }}>
+              返回单人报告
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  } // end compat_input
+
+  // ── 阶段3 合盘·结果渲染骨架（正文占位；付费墙仅到留邮箱，不接支付）──────────────
+  if (screen === "compat_result" && profile) {
+    const compatType = lookupCompat(profile.enneagram, compatMbti); // 纯查表，真实类型名（关系病历）
+    const cSignCn = (compatZodiacIdx >= 0 && t.zodiacs[compatZodiacIdx]) || "";
+    // 正文取自 pipeline/关系病理_定稿.md（当前为占位、且尚未编译进运行时），此处照常渲染占位
+    const CPH = "〔正文占位 · 关系病理_定稿.md 回填并编译进 src/data 后替换；此处仅供校验版式与栏目结构。〕";
+    const compatCols = [
+      { key: "history",   label: "关系病历", content: compatType, serif: true },
+      { key: "complaint", label: "双人主诉", content: CPH },
+      { key: "prognosis", label: "病程预测", content: CPH },
+      { key: "rx",        label: "双人医嘱", content: CPH },
+    ];
+    const canSubEmailC = payEmail.includes("@") && payEmail.includes(".");
+    const handleSubEmailC = async () => {
+      if (!canSubEmailC) return;
+      logFunnelEvent("email_submit");
+      await saveInterestEmail(payEmail, lang);
+      setPayEmailSent(true);
+    };
+    return (
+      <div ref={compatScrollRef} style={{
+        flex: 1, overflow: "auto", background: REPORT_BG,
+        padding: `calc(8px + env(safe-area-inset-top)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-left))`,
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 680, margin: "0 auto" }}>
+          <div style={{ background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 16, flexShrink: 0, padding: 18 }}>
+            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>〔占位〕合盘报告</div>
+            <div style={{ fontSize: "clamp(22px, 6vw, 34px)", fontWeight: 900, color: REPORT_PRIMARY, lineHeight: 1.15, fontFamily: SERIF_CJK }}>{compatType}</div>
+            <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, marginTop: 8 }}>我方 {profile.enneagram} · 对方 {compatMbti}{cSignCn ? ` · ${cSignCn}` : ""}</div>
+          </div>
+
+          {compatCols.map(({ key, label, content, serif }) => (
+            <div key={key} style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "12px 18px" }}>
+              <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
+              <div style={{ fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: serif ? SERIF_CJK : SANS, lineHeight: 1.75 }}>{content}</div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 16, textAlign: "center", fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6 }}>{COPY.disclaimer}</div>
+
+          <div style={{ marginTop: 16, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 10, padding: "16px 18px" }}>
+            {payEmailSent ? (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6, textAlign: "center" }}>{t.emailSuccess}</div>
+                <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.65, textAlign: "center" }}>{t.emailSuccessSub}</div>
+              </>
+            ) : (
+              <>
+                {t.premCopy.split("\n").map((line, i) => (
+                  <p key={i} style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? REPORT_PRIMARY : REPORT_SECONDARY, lineHeight: 1.65, margin: "0 0 6px", fontFamily: SANS }}>{line}</p>
+                ))}
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <input type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleSubEmailC()} placeholder={t.emailPH}
+                    style={{ flex: 1, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 6, padding: "9px 12px", color: REPORT_PRIMARY, fontSize: 16, fontFamily: SANS, outline: "none" }}
+                  />
+                  <button onClick={handleSubEmailC} disabled={!canSubEmailC}
+                    style={{ padding: "9px 16px", background: canSubEmailC ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSubEmailC ? REPORT_PRIMARY : REPORT_SECONDARY, fontSize: 14, cursor: canSubEmailC ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
+                  >{t.emailSubmit}</button>
+                </div>
+                <div style={{ fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, marginTop: 8 }}>{COPY.emailTrust}</div>
+              </>
+            )}
+          </div>
+
+          <button onClick={exitCompat}
+            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em" }}>
+            返回单人报告
+          </button>
+        </div>
+      </div>
+    );
+  } // end compat_result
 
   // ── Loading（提交后固定时长；剧场只到文案层，无进度条、非随机）───────────────────
   if (screen === "loading") {
