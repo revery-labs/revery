@@ -7,6 +7,7 @@
 // _note / _rule / _axes 三字段忽略，不参与校验。
 // ─────────────────────────────────────────────────────────────────────────────
 import COMPAT from "./data/合盘映射表.json";
+import PATHOLOGY from "./data/关系病理.json"; // 由 scripts/compat_assemble.js 从 关系病理_定稿.md 编译产出
 
 // 我方九型（含侧翼，18）与对方 MBTI（16）；键形如 `${enneagram}_${mbti}`，共 18×16=288 格。
 const ENNEA = [
@@ -67,4 +68,18 @@ export function lookupCompat(myEnneagram, theirMbti) {
     throw new Error(`合盘映射表：查不到 ${key}`);
   }
   return type;
+}
+
+// 关系病理正文（纯查表；查不到抛错）：type → { 病理定义, 双人主诉, 病程预测, 双人医嘱 }
+export function lookupPathology(type) {
+  const rec = PATHOLOGY.types[type];
+  if (!rec) throw new Error(`关系病理：查不到类型 ${type}`);
+  return rec;
+}
+
+// 对方星座钩子（纯查表；查不到抛错）：sign 为 slug（aries…pisces）
+export function signHook(sign) {
+  const hook = PATHOLOGY.signHooks[sign];
+  if (hook === undefined) throw new Error(`关系病理：查不到星座钩子 ${sign}`);
+  return hook;
 }

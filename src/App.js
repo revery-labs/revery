@@ -4,7 +4,7 @@ import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveI
 import RESULTS from "./data/results.json";
 import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
 import { nextWindowForSign } from "./astro";
-import { lookupCompat } from "./compat";
+import { lookupCompat, lookupPathology, signHook } from "./compat";
 import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -986,7 +986,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-          >〔占位〕和 TA 合盘看看</button>
+          >把 TA 也挂个号</button>
 
           <button onClick={retake}
             style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
@@ -1048,8 +1048,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
         padding: `calc(80px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left))`,
       }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
-          <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 6 }}>〔占位〕合盘</div>
-          <div style={{ fontSize: 13, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, marginBottom: 24 }}>〔占位文案〕只填对方的 MBTI 与星座；对方九型不需要。</div>
+          <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 6 }}>双人门诊</div>
+          <div style={{ fontSize: 13, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, marginBottom: 24 }}>只填对方的 MBTI 和星座。九型不填，你大概率也不知道 TA 是几号。</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: REPORT_PRIMARY, fontFamily: SANS, marginBottom: 6 }}>对方 MBTI</div>
@@ -1069,7 +1069,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             </div>
             <button onClick={() => { if (!canCompatSubmit) return; logFunnelEvent("compat_submit"); setScreen("compat_result"); }} disabled={!canCompatSubmit}
               style={{ width: "100%", padding: "13px 0", marginTop: 8, background: canCompatSubmit ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 7, color: canCompatSubmit ? REPORT_PRIMARY : REPORT_SECONDARY, fontSize: 16, cursor: canCompatSubmit ? "pointer" : "default", fontFamily: mFont, letterSpacing: "0.1em", transition: "background 0.2s" }}>
-              〔占位〕生成合盘
+              开始会诊
             </button>
             <button onClick={exitCompat}
               style={{ width: "100%", padding: "11px 0", marginTop: 4, background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em" }}>
@@ -1083,15 +1083,15 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
 
   // ── 阶段3 合盘·结果渲染骨架（正文占位；付费墙仅到留邮箱，不接支付）──────────────
   if (screen === "compat_result" && profile) {
-    const compatType = lookupCompat(profile.enneagram, compatMbti); // 纯查表，真实类型名（关系病历）
+    const compatType = lookupCompat(profile.enneagram, compatMbti); // 纯查表 → 关系病理类型名
+    const pathology = lookupPathology(compatType);                  // { 病理定义, 双人主诉, 病程预测, 双人医嘱 }
     const cSignCn = (compatZodiacIdx >= 0 && t.zodiacs[compatZodiacIdx]) || "";
-    // 正文取自 pipeline/关系病理_定稿.md（当前为占位、且尚未编译进运行时），此处照常渲染占位
-    const CPH = "〔正文占位 · 关系病理_定稿.md 回填并编译进 src/data 后替换；此处仅供校验版式与栏目结构。〕";
+    const cSignSlug = compatZodiacIdx >= 0 ? ZODIAC_SLUGS[compatZodiacIdx] : null;
+    const cHook = cSignSlug ? signHook(cSignSlug) : null;           // 对方星座钩子（描述对方）
     const compatCols = [
-      { key: "history",   label: "关系病历", content: compatType, serif: true },
-      { key: "complaint", label: "双人主诉", content: CPH },
-      { key: "prognosis", label: "病程预测", content: CPH },
-      { key: "rx",        label: "双人医嘱", content: CPH },
+      { key: "complaint", label: "双人主诉", content: pathology["双人主诉"] },
+      { key: "prognosis", label: "病程预测", content: pathology["病程预测"] },
+      { key: "rx",        label: "双人医嘱", content: pathology["双人医嘱"] },
     ];
     const canSubEmailC = payEmail.includes("@") && payEmail.includes(".");
     const handleSubEmailC = async () => {
@@ -1106,18 +1106,28 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
         padding: `calc(8px + env(safe-area-inset-top)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-left))`,
       }}>
         <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 680, margin: "0 auto" }}>
+          {/* 关系病历：类型名（大字）+ 病理定义（小字在下）+ 双方标识 */}
           <div style={{ background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 16, flexShrink: 0, padding: 18 }}>
-            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>〔占位〕合盘报告</div>
+            <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>双人病例报告</div>
             <div style={{ fontSize: "clamp(22px, 6vw, 34px)", fontWeight: 900, color: REPORT_PRIMARY, lineHeight: 1.15, fontFamily: SERIF_CJK }}>{compatType}</div>
-            <div style={{ fontSize: 14, color: REPORT_SECONDARY, fontFamily: SANS, marginTop: 8 }}>我方 {profile.enneagram} · 对方 {compatMbti}{cSignCn ? ` · ${cSignCn}` : ""}</div>
+            <div style={{ fontSize: "clamp(14px, 3.6vw, 16px)", color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.7, marginTop: 8 }}>{pathology["病理定义"]}</div>
+            <div style={{ fontSize: 13, color: REPORT_SECONDARY, fontFamily: MONO, marginTop: 10 }}>我方 {profile.enneagram} · 对方 {compatMbti}{cSignCn ? ` · ${cSignCn}` : ""}</div>
           </div>
 
-          {compatCols.map(({ key, label, content, serif }) => (
+          {compatCols.map(({ key, label, content }) => (
             <div key={key} style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "12px 18px" }}>
               <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
-              <div style={{ fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: serif ? SERIF_CJK : SANS, lineHeight: 1.75 }}>{content}</div>
+              <div style={{ fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: SANS, lineHeight: 1.75 }}>{content}</div>
             </div>
           ))}
+
+          {/* 对方星座钩子：描述对方，渲染在合盘结果末尾 */}
+          {cHook && (
+            <div style={{ marginTop: 8, background: REPORT_BG, border: `1px solid ${REPORT_BORDER}`, borderRadius: 12, padding: "12px 18px" }}>
+              <div style={{ fontSize: "clamp(13px, 3vw, 14px)", letterSpacing: "0.14em", color: REPORT_SECONDARY, fontWeight: 700, fontFamily: MONO, marginBottom: 8, textTransform: "uppercase" }}>对方 · {cSignCn}</div>
+              <div style={{ fontSize: "clamp(16px, 4vw, 19px)", color: REPORT_PRIMARY, fontFamily: SANS, lineHeight: 1.75 }}>{cHook}</div>
+            </div>
+          )}
 
           <div style={{ marginTop: 16, textAlign: "center", fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6 }}>{COPY.disclaimer}</div>
 
