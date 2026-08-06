@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
 import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
+import { nextWindowForSign } from "./astro";
 import { drawShareCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -807,6 +808,19 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     const sampleShown = sampleExpanded ? sampleFirstLayerParas : sampleFirstLayerParas.slice(0, 2);
     const showSample = sampleLayers.length === 3; // 切不出恰好 3 层（含取不到正文）则整块不渲染
 
+    // 阶段2 复发高危期：取用户星座命中的下一个未过期窗口（end>=今天，多个取最早）；无命中则不渲染此行。
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const recurWindow = nextWindowForSign(profile.sign, todayStr);
+    let recurLine = null;
+    if (recurWindow) {
+      const [sy, sm, sd] = recurWindow.start.split("-").map(Number);
+      const [ey, em, ed] = recurWindow.end.split("-").map(Number);
+      const startStr = `${sy}年${sm}月${sd}日`;
+      const endStr = ey !== sy ? `${ey}年${em}月${ed}日` : `${em}月${ed}日`;
+      recurLine = `复发高危期：${startStr} – ${endStr}`;
+    }
+
     return (
       <>
       <div style={{
@@ -888,6 +902,10 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
               <button onClick={() => { setSampleExpanded(true); logFunnelEvent("sample_rx_expand"); }}
                 style={{ marginTop: 10, width: "100%", padding: "10px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: SANS, letterSpacing: "0.06em" }}
               >展开看完整</button>
+            )}
+            {/* 阶段2 复发高危期：回访钩子，位于遮罩之外、不受折叠影响；无窗口则整行不渲染，无占位/兜底 */}
+            {recurLine && (
+              <div style={{ marginTop: 12, fontSize: "clamp(12px, 3vw, 13px)", color: REPORT_SECONDARY, fontFamily: SANS, letterSpacing: "0.02em", lineHeight: 1.5 }}>{recurLine}</div>
             )}
           </div>
           )}

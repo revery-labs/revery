@@ -62,3 +62,11 @@ export function validateAstroCalendar(data) {
 
 // 模块加载即读取并校验（失败直接抛错，不 fallback）。
 export const ASTRO_EVENTS = validateAstroCalendar(ASTRO);
+
+// 取某星座命中的「下一个未过期窗口」：end >= today 的命中里 start 最早的一个；无命中返回 null。
+// today 为 "YYYY-MM-DD"（调用方传入，便于确定性）；ISO 日期可直接按字典序比较，不做时区推算。
+export function nextWindowForSign(sign, today) {
+  const hits = ASTRO_EVENTS.filter((e) => e.affected_signs.includes(sign) && e.end >= today);
+  if (hits.length === 0) return null;
+  return hits.reduce((best, e) => (e.start < best.start ? e : best));
+}
