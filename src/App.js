@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, logFunnelEvent } from "./supabase";
+import { saveSession, signUpUser, signInUser, signOutUser, getSessionUser, saveInterestEmail, saveRxReminder, logFunnelEvent } from "./supabase";
 import RESULTS from "./data/results.json";
 import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
 import { nextWindowForSign } from "./astro";
@@ -681,6 +681,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [screen,      setScreen]     = useState(savedData ? "result" : "input");
   const [payEmail,    setPayEmail]   = useState("");
   const [payEmailSent, setPayEmailSent] = useState(false);
+  const [rxRemindOptIn, setRxRemindOptIn] = useState(false); // 阶段2「到期提醒我复诊」复选框，默认不勾选
   const [mbti,        setMbti]       = useState("");
   const [enneagram,   setEnneagram]  = useState("");
   const [zodiacIdx,   setZodiacIdx]  = useState(-1);
@@ -726,9 +727,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     }
   }, [screen, profile, profileData]);
 
-  // 阶段1：样例默认折叠——每次结果组合(profileData)变化即无条件复位，与埋点去重解耦
+  // 阶段1 样例默认折叠 + 阶段2 复诊提醒勾选复位——每次结果组合(profileData)变化即无条件复位
   useEffect(() => {
     setSampleExpanded(false);
+    setRxRemindOptIn(false);
+    setPayEmail("");
   }, [profileData]);
 
   // 阶段1：深度处方样例区块曝光埋点，每个结果组合只报一次（与 view_result 同粒度）
@@ -763,6 +766,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     loggedResultRef.current = null;
     sampleRxViewedRef.current = null;
     setSampleExpanded(false);
+    setPayEmailSent(false);
+    setRxRemindOptIn(false);
+    setPayEmail("");
+    setPatientName("");
+    setShareImg(null);
   };
 
   const submitExisting = () => {
@@ -784,6 +792,8 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       if (!canSubEmail) return;
       logFunnelEvent("email_submit"); // 只记事件，不带邮箱值（隔离铁律）
       await saveInterestEmail(payEmail, lang);
+      // 仅当勾选时才另写 rx_reminders（与 interest_emails 分离）；未勾选只写 interest_emails。
+      if (rxRemindOptIn) await saveRxReminder(payEmail, profile.sign);
       setPayEmailSent(true);
     };
 
@@ -936,6 +946,12 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
                     style={{ padding: "9px 16px", background: canSubEmail ? REPORT_RED : REPORT_BORDER, border: "none", borderRadius: 6, color: canSubEmail ? REPORT_PRIMARY : REPORT_SECONDARY, fontSize: 14, cursor: canSubEmail ? "pointer" : "default", fontFamily: SANS, fontWeight: 600, whiteSpace: "nowrap", transition: "background 0.2s" }}
                   >{t.emailSubmit}</button>
                 </div>
+                {/* 阶段2 复诊提醒 opt-in：默认不勾选；勾选才写 rx_reminders（不占红色名额）*/}
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, cursor: "pointer", fontSize: 12, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.5 }}>
+                  <input type="checkbox" checked={rxRemindOptIn} onChange={e => setRxRemindOptIn(e.target.checked)}
+                    style={{ width: 15, height: 15, flexShrink: 0, accentColor: REPORT_SECONDARY, cursor: "pointer" }} />
+                  到期提醒我复诊
+                </label>
                 {/* 1.4 信任句（输入框下方小字）——前提：funnel_events 与 interest_emails 两表隔离（1.1 已实现）*/}
                 <div style={{ fontSize: 11, color: REPORT_SECONDARY, fontFamily: SANS, lineHeight: 1.6, marginTop: 8 }}>{COPY.emailTrust}</div>
               </>

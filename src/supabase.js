@@ -31,6 +31,18 @@ export async function saveInterestEmail(email, lang) {
   });
 }
 
+// 阶段2 复诊提醒：写入独立表 rx_reminders（与 interest_emails 完全分离、无外键、不联表）。
+// 仅当用户主动勾选「到期提醒我复诊」时调用；未勾选不写本表。anon 仅 INSERT（RLS）。
+export async function saveRxReminder(email, sign) {
+  if (!supabase) return;
+  await supabase.from("rx_reminders").insert({
+    email: email.trim().toLowerCase(),
+    sign,
+    opted_in: true,
+    created_at: new Date().toISOString(),
+  });
+}
+
 // ── 漏斗埋点（Phase 1.1）─────────────────────────────────────────────────────────
 // 隔离铁律：combo 与选择值只进 funnel_events，绝不写入 interest_emails，两表永不关联。
 function uuidv4() {
