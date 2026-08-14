@@ -217,3 +217,133 @@ export function drawShareCard(canvas, data) {
   ctx.fillStyle = FG;
   ctx.fillText("revery-labs.com", PAD, by + 4);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 合盘分享卡（双人病例报告）· 复用上方画布基建（尺寸/字体/配色/禁则换行）。
+// 病历编号 REV-C{nnnn}：由有序对（甲组合, 乙组合）确定性导出——同输入逐字节同号。
+//   方向敏感：甲乙互换是另一次挂号，不做对称化。日期为渲染当日，不参与逐字节一致断言。
+// 卡内红色恰好 3 处：已确诊章 / 病历编号 / 红字压底句。BGM 不上卡（合盘无此字段）。
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 有序对 → 4 位病历号（FNV-1a 32bit，纯确定性，无随机/无时间）。甲=挂号人(MBTI·九型·星座)，乙=被挂号人(MBTI·星座)。
+function compatCaseId(self, partner) {
+  const canon = `${self.mbti}|${self.enneagram}|${self.sign}>>${partner.mbti}|${partner.sign}`;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < canon.length; i++) {
+    h ^= canon.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `REV-C${String(h % 10000).padStart(4, "0")}`;
+}
+
+// data: { self:{mbti,enneagram,sign}, partner:{mbti,sign}, compatType, pathology:{病理定义,双人主诉,双人医嘱} }
+export function drawCompatCard(canvas, data) {
+  const { self, partner, compatType, pathology } = data;
+  const ctx = canvas.getContext("2d");
+  canvas.width = CARD_W;
+  canvas.height = CARD_H;
+
+  const PAD = 80;
+  const CW = CARD_W - PAD * 2;
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, CARD_W, CARD_H);
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, CARD_W - 2, CARD_H - 2);
+
+  let y = PAD;
+
+  // 1｜头部：水印 + 确诊日期（渲染当日，与单人卡同）
+  ctx.font = `700 26px ${SANS}`;
+  ctx.fillStyle = DIM;
+  ctx.fillText("REVERY LABS · 恋爱脑诊断中心", PAD, y);
+  ctx.textAlign = "right";
+  ctx.fillText(todayStr(), CARD_W - PAD, y);
+  ctx.textAlign = "left";
+  y += 50;
+
+  // 标题「双人病例报告」+「已确诊」章（红 1/3）
+  ctx.font = `900 54px ${SERIF}`;
+  ctx.fillStyle = FG;
+  ctx.fillText("双人病例报告", PAD, y);
+  ctx.font = `800 34px ${SANS}`;
+  const stampText = "已确诊";
+  const stampW = ctx.measureText(stampText).width + 36;
+  const stampX = CARD_W - PAD - stampW;
+  ctx.strokeStyle = RED;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(stampX, y - 6, stampW, 60);
+  ctx.fillStyle = RED;
+  ctx.fillText(stampText, stampX + 18, y + 6);
+  y += 86;
+
+  // 病历编号（红 2/3）· 有序对确定性导出 · Latin 优先字体
+  ctx.font = `600 28px ${LATIN}`;
+  ctx.fillStyle = RED;
+  ctx.fillText(`病历编号 ${compatCaseId(self, partner)}`, PAD, y);
+  y += 56;
+
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CARD_W - PAD, y); ctx.stroke();
+  y += 40;
+
+  // 2｜患者甲（挂号人）· 患者乙（被挂号人）：均用类型代号
+  const selfSign = SIGN_CN[self.sign] || self.sign;
+  const partnerSign = SIGN_CN[partner.sign] || partner.sign;
+  ctx.font = `600 30px ${SANS}`;
+  ctx.fillStyle = FG;
+  for (const l of wrapLines(ctx, `患者甲（挂号人）：${self.mbti} · ${self.enneagram} · ${selfSign}`, CW)) { ctx.fillText(l, PAD, y); y += 44; }
+  y += 4;
+  for (const l of wrapLines(ctx, `患者乙（被挂号人）：${partner.mbti} · ${partnerSign}`, CW)) { ctx.fillText(l, PAD, y); y += 44; }
+  y += 26;
+
+  // 3｜关系病名（大字）+ 病理定义（小字）
+  ctx.font = `900 58px ${SERIF}`;
+  ctx.fillStyle = FG;
+  for (const l of wrapLines(ctx, compatType, CW)) { ctx.fillText(l, PAD, y); y += 72; }
+  y += 8;
+  ctx.font = `400 27px ${SANS}`;
+  ctx.fillStyle = DIM;
+  for (const l of wrapLines(ctx, pathology["病理定义"], CW)) { ctx.fillText(l, PAD, y); y += 40; }
+  y += 26;
+
+  // 4｜双人主诉 / 双人医嘱：上下堆叠单栏，宽度撑满（主诉走「」引号体）
+  const drawBlock = (label, body) => {
+    ctx.font = `700 27px ${SANS}`;
+    ctx.fillStyle = DIM;
+    ctx.fillText(label, PAD, y);
+    y += 42;
+    ctx.font = `400 30px ${SERIF}`;
+    ctx.fillStyle = FG;
+    for (const l of wrapLines(ctx, body, CW)) { ctx.fillText(l, PAD, y); y += 44; }
+    y += 26;
+  };
+  drawBlock("双人主诉", toCorner(pathology["双人主诉"]));
+  drawBlock("双人医嘱", toCorner(pathology["双人医嘱"]));
+
+  // 病程预测：取前两句（句号切分，不足两句取全部），字号/标签与主诉·医嘱同级
+  const progSents = String(pathology["病程预测"]).split("。").map((s) => s.trim()).filter(Boolean).slice(0, 2);
+  if (progSents.length) drawBlock("病程预测", toCorner(progSents.join("。") + "。"));
+
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CARD_W - PAD, y); ctx.stroke();
+  y += 30;
+
+  // 红字压底句（红 3/3）· 与单人卡同句式
+  ctx.font = `700 24px ${SERIF}`;
+  ctx.fillStyle = RED;
+  for (const l of wrapLines(ctx, "本报告由 Revery Labs 恋爱脑诊断中心出具 · 如有雷同，说明你们确实病了", CW)) { ctx.fillText(l, PAD, y); y += 34; }
+
+  // 底部：娱乐声明 + 域名（固定贴底；域名 Latin 优先字体，与单人卡同）
+  ctx.font = `400 22px ${SANS}`;
+  ctx.fillStyle = DIM;
+  const discLines = wrapLines(ctx, COPY.disclaimer, CW);
+  let by = CARD_H - PAD - discLines.length * 32 - 36;
+  for (const l of discLines) { ctx.fillText(l, PAD, by); by += 32; }
+  ctx.font = `600 24px ${LATIN}`;
+  ctx.fillStyle = FG;
+  ctx.fillText("revery-labs.com", PAD, by + 4);
+}

@@ -5,7 +5,7 @@ import RESULTS from "./data/results.json";
 import { COPY, ENNEAGRAM_HINTS, toCorner } from "./copy";
 import { nextWindowForSign } from "./astro";
 import { lookupCompat, lookupPathology, signHook } from "./compat";
-import { drawShareCard } from "./shareCard";
+import { drawShareCard, drawCompatCard } from "./shareCard";
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const CRIMSON    = "#8b2252";
@@ -695,6 +695,11 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
   const [shareImg,      setShareImg]      = useState(null);
   const shareCanvasRef = useRef(null);
   const shareSavedRef  = useRef(false); // share_save 每次打开只报一次
+  // 阶段3 合盘分享卡：独立状态，与单人卡互不干扰
+  const [showCompatCard, setShowCompatCard] = useState(false);
+  const [compatShareImg, setCompatShareImg] = useState(null);
+  const compatCanvasRef   = useRef(null);
+  const compatShareGenRef = useRef(false); // compat_share_generate 每次打开只报一次
   const [sampleExpanded, setSampleExpanded] = useState(false); // 深度处方样例展开态
   const sampleRxViewedRef = useRef(null);   // sample_rx_view 每个结果组合只报一次
   const compatScrollRef   = useRef(null);   // 阶段3 合盘结果滚动容器，进入时归零 scrollTop
@@ -765,6 +770,24 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     }
   }, [showShareCard, patientName, profile]);
 
+  // 阶段3 合盘分享卡：模态打开时按有序对（profile, 对方MBTI, 对方星座）绘制并生成可长按保存的图片；
+  // compat_share_generate 每次打开只报一次。查表值仅在 compat_result 有效态才会打开模态，故此处直接查表。
+  useEffect(() => {
+    if (showCompatCard && profile && compatMbti && compatZodiacIdx >= 0 && compatCanvasRef.current) {
+      const compatType = lookupCompat(profile.enneagram, compatMbti);
+      const pathology  = lookupPathology(compatType);
+      drawCompatCard(compatCanvasRef.current, {
+        self:    { mbti: profile.mbti, enneagram: profile.enneagram, sign: profile.sign },
+        partner: { mbti: compatMbti, sign: ZODIAC_SLUGS[compatZodiacIdx] },
+        compatType, pathology,
+      });
+      try {
+        setCompatShareImg(compatCanvasRef.current.toDataURL("image/png"));
+        if (!compatShareGenRef.current) { compatShareGenRef.current = true; logFunnelEvent("compat_share_generate"); }
+      } catch { /* 生成失败静默 */ }
+    }
+  }, [showCompatCard, profile, compatMbti, compatZodiacIdx]);
+
   const retake = () => {
     localStorage.removeItem(SAVED_KEY);
     setScreen("input");
@@ -787,6 +810,9 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
     setScreen("result");
     setCompatMbti("");
     setCompatZodiacIdx(-1);
+    setShowCompatCard(false);
+    setCompatShareImg(null);
+    compatShareGenRef.current = false;
   };
 
   const submitExisting = () => {
@@ -974,19 +1000,19 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             )}
           </div>
 
-          {/* 2.2 分享入口：描边样式，不占红色名额 */}
-          <button onClick={() => { setShareImg(null); shareSavedRef.current = false; setShowShareCard(true); logFunnelEvent("share_open"); }}
-            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 8, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-          >生成分享病例卡</button>
-
           {/* 阶段3 合盘入口（位置与文案先用占位）·描边样式，不占红色名额 */}
           <button onClick={() => { setScreen("compat_input"); logFunnelEvent("compat_input_view"); }}
             style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
             onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
           >把 TA 也挂个号</button>
+
+          {/* 2.2 分享入口：描边样式，不占红色名额 */}
+          <button onClick={() => { setShareImg(null); shareSavedRef.current = false; setShowShareCard(true); logFunnelEvent("share_open"); }}
+            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 8, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+          >生成分享病例卡</button>
 
           <button onClick={retake}
             style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
@@ -1101,6 +1127,7 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
       setPayEmailSent(true);
     };
     return (
+      <>
       <div ref={compatScrollRef} style={{
         flex: 1, overflow: "auto", background: REPORT_BG,
         padding: `calc(8px + env(safe-area-inset-top)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(${isMobile ? 8 : 20}px + env(safe-area-inset-left))`,
@@ -1156,12 +1183,38 @@ function AssessPage({ t, th, lang, onPaymentSuccess }) {
             )}
           </div>
 
+          {/* 合盘分享入口：描边样式，不占红色名额；复用现有模态 */}
+          <button onClick={() => { setCompatShareImg(null); compatShareGenRef.current = false; setShowCompatCard(true); logFunnelEvent("compat_share_open"); }}
+            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "13px 0", background: "transparent", border: `1px solid ${REPORT_PRIMARY}`, borderRadius: 8, color: REPORT_PRIMARY, fontSize: 15, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em", transition: "opacity 0.15s" }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+          >生成分享病例卡</button>
+
           <button onClick={exitCompat}
-            style={{ flexShrink: 0, width: "100%", marginTop: 16, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em" }}>
+            style={{ flexShrink: 0, width: "100%", marginTop: 12, padding: "11px 0", background: "transparent", border: `1px solid ${REPORT_BORDER}`, borderRadius: 8, color: REPORT_SECONDARY, fontSize: 14, cursor: "pointer", fontFamily: mFont, letterSpacing: "0.08em" }}>
             返回单人报告
           </button>
         </div>
       </div>
+
+      {/* 合盘分享卡模态：复用单人卡模态样式（× 关闭、长按保存、无下载按钮）*/}
+      <Modal show={showCompatCard} onClose={() => setShowCompatCard(false)} th={th}>
+        <div style={{ position: "relative" }}>
+        <button onClick={() => setShowCompatCard(false)} aria-label="关闭"
+          style={{ position: "absolute", top: -10, right: -14, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", color: REPORT_SECONDARY, fontSize: 26, lineHeight: 1, cursor: "pointer", padding: 0, zIndex: 2 }}
+        >×</button>
+        <div style={{ fontFamily: SANS, fontSize: 16, fontWeight: 600, color: REPORT_PRIMARY, marginBottom: 12, textAlign: "center" }}>双人病例卡</div>
+        {/* 隐藏 canvas 仅用于绘制；展示可长按保存的图片 */}
+        <canvas ref={compatCanvasRef} style={{ display: "none" }} />
+        {compatShareImg && (
+          <img src={compatShareImg} alt="双人病例卡" style={{ width: "100%", borderRadius: 10, display: "block", border: `1px solid ${REPORT_BORDER}` }} />
+        )}
+        {compatShareImg && (
+          <div style={{ fontFamily: SANS, fontSize: 13, color: REPORT_SECONDARY, margin: "12px 0 0", textAlign: "center", lineHeight: 1.6 }}>长按图片保存到相册。</div>
+        )}
+        </div>
+      </Modal>
+      </>
     );
   } // end compat_result
 
